@@ -7,11 +7,18 @@
 #######################################
 
 GyverHTTP	KEYWORD1
+StreamReader	KEYWORD1
+StreamSender	KEYWORD1
+HeadersParser	KEYWORD1
+Request	KEYWORD1
+Response	KEYWORD1
+HeadersCollector	KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)
 #######################################
 
+ghttp	KEYWORD2
 
 #######################################
 # Constants (LITERAL1)
