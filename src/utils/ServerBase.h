@@ -6,6 +6,7 @@
 #include "HeadersParser.h"
 #include "StreamReader.h"
 #include "StreamSender.h"
+#include "cfg.h"
 
 #ifndef __AVR__
 #include <functional>
@@ -268,7 +269,7 @@ class ServerBase {
             bool eol = false;
             size_t boundlen = 0;
             while (client.connected()) {
-                yield();
+                GHTTP_ESP_YIELD();
                 String s = client.readStringUntil('\n');
                 if (!s.length() || s[s.length() - 1] != '\r') break;
 
@@ -315,7 +316,8 @@ class ServerBase {
     void _flush() {
         uint8_t bytes[HS_FLUSH_BLOCK];
         while (_clientp && _clientp->available()) {
-            yield();
+            delay(1);
+            GHTTP_ESP_YIELD();
             _clientp->readBytes(bytes, min(_clientp->available(), HS_FLUSH_BLOCK));
         }
     }

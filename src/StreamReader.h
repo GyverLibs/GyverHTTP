@@ -1,6 +1,8 @@
 #pragma once
 #include <Arduino.h>
 
+#include "utils/cfg.h"
+
 // ==================== READER ====================
 class StreamReader : public Printable {
    public:
@@ -58,17 +60,19 @@ class StreamReader : public Printable {
 
         while (left) {
             delay(1);
+            GHTTP_ESP_YIELD();
             if (!stream->available()) {
                 uint32_t ms = millis();
                 while (!stream->available()) {
-                    yield();
+                    delay(1);
+                    GHTTP_ESP_YIELD();
                     if (millis() - ms >= _tout) goto terminate;
                 }
             }
             size_t len = min(min(left, (size_t)stream->available()), _bsize);
             size_t read = stream->readBytes(buf, len);
-
-            delay(1);
+            GHTTP_ESP_YIELD();
+            
             if (read != len) break;
             if (len != p.write(buf, len)) break;
             left -= len;

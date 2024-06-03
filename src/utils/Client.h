@@ -8,6 +8,7 @@
 
 #include "HeadersParser.h"
 #include "StreamReader.h"
+#include "cfg.h"
 
 #define HC_DEF_TIMEOUT 2000     // таймаут по умолчанию
 #define HC_HEADER_BUF_SIZE 150  // буфер одной строки хэдера
@@ -80,7 +81,7 @@ class Client : public Print {
             return 0;
         }
         size_t w = client.write(buffer, size);
-        client.flush();
+        // client.flush();
         _waiting = 1;
         _lastSend = millis();
         return w;
@@ -221,7 +222,8 @@ class Client : public Print {
             _wait();
             uint8_t bytes[HC_FLUSH_BLOCK];
             while (client.available()) {
-                yield();
+                delay(1);
+                GHTTP_ESP_YIELD();
                 client.readBytes(bytes, min(client.available(), HC_FLUSH_BLOCK));
             }
             if (_close) {
@@ -252,6 +254,8 @@ class Client : public Print {
         if (!_waiting) return 0;
         while (!client.available()) {
             delay(1);
+            GHTTP_ESP_YIELD();
+
             if (millis() - _lastSend >= _timeout) {
                 HC_LOG("client timeout");
                 stop();

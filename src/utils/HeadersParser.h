@@ -3,6 +3,8 @@
 #include <Client.h>
 #include <StringUtils.h>
 
+#include "utils/cfg.h"
+
 namespace ghttp {
 
 class HeadersCollector {
@@ -19,7 +21,7 @@ class HeadersParser {
         if (!buf) return;
 
         while (client.connected()) {
-            yield();
+            GHTTP_ESP_YIELD();
             size_t n = client.readBytesUntil('\n', buf, bufsize);
 
             if (!n || buf[n - 1] != '\r') break;  // пустая или не оканчивается на \r

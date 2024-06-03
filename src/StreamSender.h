@@ -39,7 +39,6 @@ class StreamSender : public Printable {
             if (!buf) return 0;
 
             while (left) {
-                yield();
                 size_t len = min(_bsize, left);
                 size_t read = _file->read(buf, len);
                 printed += p.write(buf, read);
@@ -57,7 +56,6 @@ class StreamSender : public Printable {
                 if (!buf) return 0;
 
                 while (left) {
-                    yield();
                     size_t len = min(_bsize, left);
                     memcpy_P(buf, bytes, len);
                     printed += p.write(buf, len);
