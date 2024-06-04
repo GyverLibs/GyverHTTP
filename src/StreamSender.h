@@ -37,6 +37,7 @@ class StreamSender : public Printable {
 
 #ifdef FS_H
         if (_file) {
+            if (!*_file) return 0;
             uint8_t* buf = new uint8_t[min(_bsize, _len)];
             if (!buf) return 0;
             while (left) {
