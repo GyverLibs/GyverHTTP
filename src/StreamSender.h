@@ -1,6 +1,8 @@
 #pragma once
 #include <Arduino.h>
 
+#include "utils/cfg.h"
+
 #if defined(ESP8266) || defined(ESP32)
 #include <FS.h>
 #endif
@@ -37,15 +39,14 @@ class StreamSender : public Printable {
         if (_file) {
             uint8_t* buf = new uint8_t[min(_bsize, _len)];
             if (!buf) return 0;
-
             while (left) {
                 size_t len = min(_bsize, left);
                 size_t read = _file->read(buf, len);
+                GHTTP_ESP_YIELD();
                 printed += p.write(buf, read);
                 left -= len;
             }
             delete[] buf;
-
             return printed;
         }
 #endif
@@ -56,6 +57,7 @@ class StreamSender : public Printable {
                 if (!buf) return 0;
 
                 while (left) {
+                    GHTTP_ESP_YIELD();
                     size_t len = min(_bsize, left);
                     memcpy_P(buf, bytes, len);
                     printed += p.write(buf, len);

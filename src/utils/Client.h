@@ -71,6 +71,7 @@ class Client : public Print {
             _init();
             return 0;
         }
+        client.flush();
         _waiting = 1;
         _lastSend = millis();
         return client.write(data);
@@ -81,7 +82,7 @@ class Client : public Print {
             return 0;
         }
         size_t w = client.write(buffer, size);
-        // client.flush();
+        client.flush();
         _waiting = 1;
         _lastSend = millis();
         return w;
