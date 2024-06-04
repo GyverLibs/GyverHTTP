@@ -23,11 +23,11 @@
 <a id="usage"></a>
 
 ## Использование
-### StreamSender
+### StreamWriter
 Быстрый отправлятель данных в Print, поддерживает работу с файлами и PROGMEM. Читает в буфер и отправляет блоками, что многократно быстрее обычной отправки
 ```cpp
-StreamSender(File& file);
-StreamSender(const uint8_t* buf, size_t len, bool pgm = 0);
+StreamWriter(Stream& stream, size_t size);
+StreamWriter(const uint8_t* buf, size_t len, bool pgm = 0);
 
 // размер данных
 size_t length();

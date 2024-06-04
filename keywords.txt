@@ -8,7 +8,7 @@
 
 GyverHTTP	KEYWORD1
 StreamReader	KEYWORD1
-StreamSender	KEYWORD1
+StreamWriter	KEYWORD1
 HeadersParser	KEYWORD1
 Request	KEYWORD1
 Response	KEYWORD1

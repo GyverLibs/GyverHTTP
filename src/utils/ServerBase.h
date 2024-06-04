@@ -5,7 +5,7 @@
 
 #include "HeadersParser.h"
 #include "StreamReader.h"
-#include "StreamSender.h"
+#include "StreamWriter.h"
 #include "cfg.h"
 
 #ifndef __AVR__
@@ -181,21 +181,21 @@ class ServerBase {
     // отправить файл
     void sendFile(File& file, su::Text type = su::Text(), bool cache = false, bool gzip = false) {
         if (!_clientp) return;
-        StreamSender sender(file);
+        StreamWriter sender(file, file.size());
         _sendFile(sender, type, cache, gzip);
     }
 #endif
     // отправить файл из буфера
     void sendFile(const uint8_t* buf, size_t len, su::Text type = su::Text(), bool cache = false, bool gzip = false) {
         if (!_clientp) return;
-        StreamSender sender(buf, len);
+        StreamWriter sender(buf, len);
         _sendFile(sender, type, cache, gzip);
     }
 
     // отправить файл из PROGMEM
     void sendFile_P(const uint8_t* buf, size_t len, su::Text type = su::Text(), bool cache = false, bool gzip = false) {
         if (!_clientp) return;
-        StreamSender sender(buf, len, true);
+        StreamWriter sender(buf, len, true);
         _sendFile(sender, type, cache, gzip);
     }
 
@@ -298,7 +298,7 @@ class ServerBase {
     bool _handled = false;
     bool _cors = true;
 
-    void _sendFile(StreamSender& sender, const su::Text& type, bool cache, bool gzip) {
+    void _sendFile(StreamWriter& sender, const su::Text& type, bool cache, bool gzip) {
         _flush();
         sender.setBlockSize(HS_BLOCK_SIZE);
         Response resp(200);
