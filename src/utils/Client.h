@@ -254,6 +254,9 @@ class Client : public Print {
         if (!_waiting) return 0;
         while (!client.available()) {
             delay(1);
+#ifdef ESP8266
+            optimistic_yield(5000);
+#endif
             GHTTP_ESP_YIELD();
 
             if (millis() - _lastSend >= _timeout) {
