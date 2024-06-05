@@ -34,7 +34,7 @@ class StreamWriter : public Printable {
            
             while (left) {
                 size_t len = min(min(left, (size_t)_stream->available()), _bsize);
-                size_t read = _stream->read(buf, len);
+                size_t read = _stream->readBytes(buf, len);
                 GHTTP_ESP_YIELD();
                 printed += p.write(buf, read);
                 if (len != read) break;
