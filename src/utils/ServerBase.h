@@ -181,22 +181,22 @@ class ServerBase {
     // отправить файл
     void sendFile(File& file, su::Text type = su::Text(), bool cache = false, bool gzip = false) {
         if (!_clientp) return;
-        StreamWriter sender(file, file.size());
-        _sendFile(sender, type, cache, gzip);
+        StreamWriter writer(&file, file.size());
+        _sendFile(writer, type, cache, gzip);
     }
 #endif
     // отправить файл из буфера
     void sendFile(const uint8_t* buf, size_t len, su::Text type = su::Text(), bool cache = false, bool gzip = false) {
         if (!_clientp) return;
-        StreamWriter sender(buf, len);
-        _sendFile(sender, type, cache, gzip);
+        StreamWriter writer(buf, len);
+        _sendFile(writer, type, cache, gzip);
     }
 
     // отправить файл из PROGMEM
     void sendFile_P(const uint8_t* buf, size_t len, su::Text type = su::Text(), bool cache = false, bool gzip = false) {
         if (!_clientp) return;
-        StreamWriter sender(buf, len, true);
-        _sendFile(sender, type, cache, gzip);
+        StreamWriter writer(buf, len, true);
+        _sendFile(writer, type, cache, gzip);
     }
 
     // пометить запрос как выполненный
@@ -298,18 +298,18 @@ class ServerBase {
     bool _handled = false;
     bool _cors = true;
 
-    void _sendFile(StreamWriter& sender, const su::Text& type, bool cache, bool gzip) {
+    void _sendFile(StreamWriter& writer, const su::Text& type, bool cache, bool gzip) {
         _flush();
-        sender.setBlockSize(HS_BLOCK_SIZE);
+        writer.setBlockSize(HS_BLOCK_SIZE);
         Response resp(200);
-        resp.length(sender.length());
+        resp.length(writer.length());
         resp.type(type);
         resp.cache(cache);
         resp.gzip(gzip);
         resp.cors(_cors);
         _clientp->print(resp);
 
-        _clientp->print(sender);
+        _clientp->print(writer);
         _handled = true;
         _clientp = nullptr;
     }

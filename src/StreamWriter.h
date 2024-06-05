@@ -7,7 +7,7 @@
 class StreamWriter : public Printable {
    public:
     StreamWriter() {}
-    StreamWriter(Stream& stream, size_t len) : _stream(&stream), _len(len) {}
+    StreamWriter(Stream* stream, size_t len) : _stream(stream), _len(len) {}
     StreamWriter(const uint8_t* buf, size_t len, bool pgm = 0) : _buf(buf), _len(len), _pgm(pgm) {}
 
     // размер данных
@@ -33,7 +33,7 @@ class StreamWriter : public Printable {
             if (!buf) return 0;
            
             while (left) {
-                size_t len = min(min(left, (size_t)_stream->available()), _bsize)
+                size_t len = min(min(left, (size_t)_stream->available()), _bsize);
                 size_t read = _stream->read(buf, len);
                 GHTTP_ESP_YIELD();
                 printed += p.write(buf, read);

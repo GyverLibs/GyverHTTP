@@ -26,7 +26,7 @@
 ### StreamWriter
 Быстрый отправлятель данных в Print, поддерживает работу с файлами и PROGMEM. Читает в буфер и отправляет блоками, что многократно быстрее обычной отправки
 ```cpp
-StreamWriter(Stream& stream, size_t size);
+StreamWriter(Stream* stream, size_t size);
 StreamWriter(const uint8_t* buf, size_t len, bool pgm = 0);
 
 // размер данных
