@@ -38,7 +38,7 @@ class StreamWriter : public Printable {
                 left -= len;
             }
             delete[] buf;
-            return printed;
+           
         } else if (_buf) {
             if (_pgm) {
                 const uint8_t* bytes = _buf;
@@ -54,12 +54,12 @@ class StreamWriter : public Printable {
                     left -= len;
                 }
                 delete[] buf;
-                return printed;
+               
             } else {
-                return p.write(_buf, _len);
+                printed = p.write(_buf, _len);
             }
         }
-        return 0;
+        return printed;
     }
 
    protected:
