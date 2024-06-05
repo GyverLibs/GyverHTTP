@@ -28,13 +28,16 @@ class StreamWriter : public Printable {
         size_t printed = 0;
 
         if (_stream) {
+            if (!_stream->available()) return 0;
             uint8_t* buf = new uint8_t[min(_bsize, _len)];
             if (!buf) return 0;
+           
             while (left) {
-                size_t len = min(_bsize, left);
+                size_t len = min(min(left, (size_t)_stream->available()), _bsize)
                 size_t read = _stream->read(buf, len);
                 GHTTP_ESP_YIELD();
                 printed += p.write(buf, read);
+                if (len != read) break;
                 left -= len;
             }
             delete[] buf;
