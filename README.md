@@ -191,6 +191,44 @@ su::Text param(const su::Text& key);
 StreamReader& body();
 ```
 
+### ghttp::HeadersCollector
+Интерфейс для ручной обработки headers. Используется следующим образом:
+
+Создаём свой класс на его основе. Например пусть выводит в сериал
+```cpp
+class Collector : public ghttp::HeadersCollector {
+   public:
+    void header(su::Text& name, su::Text& value) {
+        Serial.print(name);
+        Serial.print(": ");
+        Serial.println(value);
+    }
+};
+```
+
+Перехват хэдеров в случае с HTTP клиентом
+```cpp
+if (http.available()) {
+    Collector collector;
+    ghttp::Client::Response resp = http.getResponse(&collector);
+    // в этот момент имеем разобранные хэдеры
+    if (resp) ...
+}
+```
+
+Перехват хэдеров в случае с HTTP сервером
+```cpp
+Collector collector;
+
+void onrequest(...) {
+}
+
+void loop() {
+    // хэдеры обработаются перед вызовом коллбэка
+    server.tick(&collector);
+}
+```
+
 <a id="versions"></a>
 
 ## Версии
