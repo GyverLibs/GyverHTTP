@@ -14,7 +14,7 @@
 #define HC_HEADER_BUF_SIZE 150  // буфер одной строки хэдера
 #define HC_FLUSH_BLOCK 64       // блок очистки
 
-#define HC_USE_LOG Serial
+// #define HC_USE_LOG Serial
 
 #ifdef HC_USE_LOG
 #define HC_LOG(x) HC_USE_LOG.println(x)
