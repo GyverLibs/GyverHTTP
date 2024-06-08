@@ -125,10 +125,10 @@ void flush();
 
 ### Client::Response
 ```cpp
-// тип контента
+// тип контента (из хэдера Content-Type)
 su::Text type();
 
-// тело ответа
+// тело ответа (длина из хэдера Content-Length)
 StreamReader& body();
 
 // ответ существует
