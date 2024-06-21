@@ -18,6 +18,18 @@ class StreamReader : public Printable {
         _bsize = bsize;
     }
 
+    // прочитать байт
+    uint8_t read() {
+        if (available()) {
+            int res = stream->read();
+            if (res >= 0) {
+                _len--;
+                return res;
+            }
+        }
+        return 0;
+    }
+
     // прочитать в буфер, вернёт true при успехе
     bool readBytes(uint8_t* buf) const {
         return (stream && buf) ? (stream->readBytes(buf, _len) == _len) : 0;
@@ -33,9 +45,14 @@ class StreamReader : public Printable {
         return _writeTo(p);
     }
 
-    // общий размер входящих данных
+    // оставшийся размер входящих данных
     size_t length() const {
         return stream ? _len : 0;
+    }
+
+    // оставшийся размер входящих данных
+    size_t available() const {
+        return length();
     }
 
     // корреткность ридера
@@ -56,7 +73,7 @@ class StreamReader : public Printable {
 
         size_t left = _len;
         uint8_t* buf = new uint8_t[min(_bsize, _len)];
-        if (!buf) goto terminate;
+        if (!buf) return 0;
 
         while (left) {
             delay(1);
@@ -72,7 +89,7 @@ class StreamReader : public Printable {
             size_t len = min(min(left, (size_t)stream->available()), _bsize);
             size_t read = stream->readBytes(buf, len);
             GHTTP_ESP_YIELD();
-            
+
             if (read != len) break;
             if (len != p.write(buf, len)) break;
             left -= len;

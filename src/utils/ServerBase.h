@@ -100,7 +100,7 @@ class ServerBase {
 
         // путь (без параметров)
         su::Text path() const {
-            return (_q > 0) ? _url.substring(0, _q) : su::Text();
+            return (_q > 0) ? _url.substring(0, _q) : _url;
         }
 
         // получить значение параметра по ключу
