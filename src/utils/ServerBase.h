@@ -39,11 +39,14 @@ class ServerBase {
         }
 
         void cache(bool enabled) {
-            if (enabled) s += F("Cache-Control: max-age=" HS_CACHE_PRD);
-            else s += F(
-                     "Cache-Control: no-cache, no-store, must-revalidate\r\n"
-                     "Pragma: no-cache\r\n"
-                     "Expires: 0\r\n");
+            if (enabled) {
+                s += F("Cache-Control: max-age=" HS_CACHE_PRD "\r\n");
+            } else {
+                s += F(
+                    "Cache-Control: no-cache, no-store, must-revalidate\r\n"
+                    "Pragma: no-cache\r\n"
+                    "Expires: 0\r\n");
+            }
         }
         void type(const su::Text& t) {
             s += F("Content-Type: ");
