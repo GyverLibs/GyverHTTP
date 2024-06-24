@@ -19,6 +19,9 @@ const char html_p[] PROGMEM = R"raw(
 <body>
     <button onclick="url()">url</button>
     <button onclick="json()">json</button>
+    <button onclick="answer()">answer</button>
+    <button onclick="answer_headers()">answer+headers</button>
+    <button onclick="file_headers()">file+headers</button>
     <input type="file">
     <button onclick="file()">send file</button>
 </body>
@@ -28,6 +31,27 @@ const char html_p[] PROGMEM = R"raw(
         const res = await fetch('/qs?kek=pek&lol=kek', {
             method: 'POST',
         });
+    }
+    async function answer() {
+        const res = await fetch('/answer', {
+            method: 'POST',
+        });
+        console.log(...res.headers);
+        console.log(await res.text());
+    }
+    async function answer_headers() {
+        const res = await fetch('/answer_headers', {
+            method: 'POST',
+        });
+        console.log(...res.headers);
+        console.log(await res.text());
+    }
+    async function file_headers() {
+        const res = await fetch('/file_headers', {
+            method: 'POST',
+        });
+        console.log(...res.headers);
+        console.log(await res.text());
     }
     async function json() {
         const res = await fetch('/json', {
@@ -84,10 +108,30 @@ void setup() {
             // server.sendFile((uint8_t*)"hello text!", 11);
             // File f = LittleFS.open("lorem.txt", "r");
             // server.sendFile(f);
+        } else if (req.url() == "/answer") {
+            server.send("hello ");
+            server.send("world");
+            server.send(" WORLD");
+        } else if (req.url() == "/answer_headers") {
+            // добавить свои хэдеры
+            ghttp::ServerBase::Headers headers(200);
+            headers.add("kek-header", "kek value");
+            headers.add("another-header", "jello!");
+            server.beginResponse(headers);
+
+            server.send("this is ");
+            server.send("answer");
+        } else if (req.url() == "/file_headers") {
+            // добавить свои хэдеры
+            ghttp::ServerBase::Headers headers(200);
+            headers.add("file-header", "abcdef");
+            server.beginResponse(headers);
+
+            char file[] = "hello!";
+            server.sendFile((uint8_t*)file, strlen(file));
+        } else {
+            server.send(200);
         }
-        // server.send("hello ");
-        // server.send("kek ");
-        // server.send("pek");
     });
 }
 

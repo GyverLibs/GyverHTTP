@@ -148,8 +148,12 @@ void tick(HeadersCollector* collector = nullptr);
 // подключить обработчик запроса
 void onRequest(RequestCallback callback);
 
+// начать ответ. В Headers можно указать кастомные хэдеры
+void beginResponse(Headers& resp);
+
 // отправить клиенту. Можно вызывать несколько раз подряд
-void send(const su::Text& text, uint16_t code = 200, su::Text type = su::Text());
+void send(const su::Text& text);
+void send(const su::Text& text, uint16_t code, su::Text type = su::Text());
 
 // отправить клиенту код. Должно быть единственным ответом
 void send(uint16_t code);
@@ -185,10 +189,20 @@ const su::Text& url();
 su::Text path();
 
 // получить значение параметра по ключу
+// параметр без значения вернёт валидную пустую строку
 su::Text param(const su::Text& key);
 
 // получить тело запроса. Может выводиться в Print
 StreamReader& body();
+```
+
+### ServerBase::Headers
+```cpp
+// начать с кодом ответа
+Headers(uint16_t code);
+
+// добавить хэдер
+void add(const su::Text& name, const su::Text& value);
 ```
 
 ### ghttp::HeadersCollector

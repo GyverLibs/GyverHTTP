@@ -24,21 +24,21 @@
 namespace ghttp {
 
 class ServerBase {
-   private:
-    class Response : public Printable {
-       public:
-        Response(size_t code) {
+   public:
+    class Headers {
+        friend class ServerBase;
+        Headers() {
             s.reserve(200);
+        }
+        void begin(uint16_t code) {
+            if (_started) return;
+            _started = true;
             s += F("HTTP/1.1 ");
             s += code;
             if (code == 200) s += (code == 200) ? F(" OK\r\n") : F(" ERROR\r\n");
         }
-
-        size_t printTo(Print& p) const {
-            return p.println(s);
-        }
-
         void cache(bool enabled) {
+            checkStart();
             if (enabled) {
                 s += F("Cache-Control: max-age=" HS_CACHE_PRD "\r\n");
             } else {
@@ -49,15 +49,18 @@ class ServerBase {
             }
         }
         void type(const su::Text& t) {
+            checkStart();
             s += F("Content-Type: ");
             if (t) t.addString(s);
             else s += F("text/plain");
             clrf();
         }
         void gzip(bool enabled) {
+            checkStart();
             if (enabled) s += F("Content-Encoding: gzip\r\n");
         }
         void cors(bool use = true) {
+            checkStart();
             if (use) {
                 s += F(
                     "Access-Control-Allow-Origin:*\r\n"
@@ -66,11 +69,22 @@ class ServerBase {
             }
         }
         void length(size_t len) {
+            checkStart();
             s += F("Content-Length: ");
             s += len;
             clrf();
         }
-        void header(const su::Text& name, const su::Text& value) {
+
+       public:
+        // код ответа сервера
+        Headers(uint16_t code) {
+            s.reserve(200);
+            begin(code);
+        }
+        
+        // добавить хэдер
+        void add(const su::Text& name, const su::Text& value) {
+            checkStart();
             name.addString(s);
             s += F(": ");
             value.addString(s);
@@ -79,12 +93,15 @@ class ServerBase {
 
        private:
         String s;
+        bool _started = false;
         void clrf() {
             s += F("\r\n");
         }
+        void checkStart() {
+            if (!_started) begin(200);
+        }
     };
 
-   public:
     class Request {
        public:
         Request(const su::Text& method, const su::Text& url, Stream* stream, size_t len) : _reader(stream, len), _method(method), _url(url) {
@@ -118,6 +135,9 @@ class ServerBase {
                 if (p < 0) return su::Text();
 
                 p += key.length();
+                if (p == params.length() || params[p] == '&') {
+                    return su::Text("", 0);
+                }
                 if (params[p] == '=') {
                     p++;
                     break;
@@ -148,24 +168,39 @@ class ServerBase {
 
     // ==================== SERVER ====================
    public:
+    // начать ответ. В Headers можно указать кастомные хэдеры
+    void beginResponse(Headers& resp) {
+        _beginResponse(resp, false);
+    }
+
     // подключить обработчик запроса
     void onRequest(RequestCallback callback) {
         _req_cb = callback;
     }
 
     // отправить клиенту. Можно вызывать несколько раз подряд
-    void send(const su::Text& text, uint16_t code = 200, su::Text type = su::Text()) {
+    void send(const su::Text& text, uint16_t code, su::Text type = su::Text()) {
         if (!_clientp) return;
 
-        _flush();
-        if (!_handled) {
-            _handled = true;
-            Response resp(code);
+        if (!_respStarted) {
+            Headers resp(code);
             resp.type(type);
-            resp.cors(_cors);
-            _clientp->print(resp);
+            _beginResponse(resp, true);
         }
         _clientp->print(text);
+    }
+    void send(const su::Text& text) {
+        if (!_clientp) return;
+
+        if (!_respStarted) {
+            send(text, 200);
+        } else {
+            if (!_contentBegin) {
+                _contentBegin = true;
+                _clientp->println();
+            }
+            _clientp->print(text);
+        }
     }
 
     // отправить клиенту код. Должно быть единственным ответом
@@ -173,10 +208,11 @@ class ServerBase {
         if (!_clientp) return;
 
         _flush();
-        Response resp(code);
-        resp.cors(_cors);
-        _clientp->print(resp);
-        _handled = true;
+        if (!_respStarted) {
+            Headers resp(code);
+            _beginResponse(resp, true);
+        }
+        _respStarted = true;
         _clientp = nullptr;
     }
 
@@ -204,7 +240,7 @@ class ServerBase {
 
     // пометить запрос как выполненный
     void handle() {
-        _handled = true;
+        _respStarted = true;
     }
 
     // использовать CORS хэдеры (умолч. включено)
@@ -266,7 +302,8 @@ class ServerBase {
         if (!headers || !_req_cb) return send(400);
 
         _clientp = &client;
-        _handled = false;
+        _respStarted = false;
+        _contentBegin = false;
 
         if (headers.contentType.startsWith(F("multipart")) && headers.length) {
             bool eol = false;
@@ -291,29 +328,46 @@ class ServerBase {
             _req_cb(Request(lines[0], lines[1], &client, headers.length));
         }
 
-        if (!_handled) send(500);
+        if (!_respStarted) send(500);
         _clientp = nullptr;
     }
 
    private:
     RequestCallback _req_cb = nullptr;
     ::Client* _clientp = nullptr;
-    bool _handled = false;
+    bool _respStarted = false;
+    bool _contentBegin = false;
     bool _cors = true;
 
+    void _beginResponse(Headers& resp, bool lastHeader) {
+        if (!_clientp || _respStarted) return;
+
+        _flush();
+        resp.cors(_cors);
+        if (lastHeader) _clientp->println(resp.s);
+        else _clientp->print(resp.s);
+        _contentBegin = lastHeader;
+        _respStarted = true;
+    }
     void _sendFile(StreamWriter& writer, const su::Text& type, bool cache, bool gzip) {
         _flush();
         writer.setBlockSize(HS_BLOCK_SIZE);
-        Response resp(200);
-        resp.length(writer.length());
-        resp.type(type);
-        resp.cache(cache);
-        resp.gzip(gzip);
-        resp.cors(_cors);
-        _clientp->print(resp);
 
-        _clientp->print(writer);
-        _handled = true;
+        if (!_contentBegin) {
+            Headers resp;
+            if (!_respStarted) {
+                resp.begin(200);
+                resp.cors(_cors);
+            }
+            resp.length(writer.length());
+            resp.type(type);
+            resp.cache(cache);
+            resp.gzip(gzip);
+            _clientp->println(resp.s);
+
+            _clientp->print(writer);
+        }
+        _respStarted = true;
         _clientp = nullptr;
     }
     void _flush() {
