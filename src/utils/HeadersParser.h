@@ -9,7 +9,7 @@ namespace ghttp {
 
 class HeadersCollector {
    public:
-    virtual void header(su::Text& name, su::Text& value) = 0;
+    virtual void header(Text& name, Text& value) = 0;
 };
 
 class HeadersParser {
@@ -30,11 +30,11 @@ class HeadersParser {
                 break;
             }
 
-            su::Text header(buf, n - 1);
+            Text header(buf, n - 1);
             int16_t colon = header.indexOf(':');
             if (colon > 0) {
-                su::Text name = header.substring(0, colon);
-                su::Text value = header.substring(colon + 2);  // ": "
+                Text name = header.substring(0, colon);
+                Text value = header.substring(colon + 2);  // ": "
                 if (collector) collector->header(name, value);
                 if (!typeF && name == F("Content-Type")) {
                     value.addString(contentType);

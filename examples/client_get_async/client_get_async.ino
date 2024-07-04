@@ -40,7 +40,7 @@ void setup() {
 // custom header collector
 class Collector : public ghttp::HeadersCollector {
    public:
-    void header(su::Text& name, su::Text& value) {
+    void header(Text& name, Text& value) {
         Serial.print(name);
         Serial.print(": ");
         Serial.println(value);

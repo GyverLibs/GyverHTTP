@@ -99,10 +99,10 @@ void onResponse(ResponseCallback cb);
 bool connect();
 
 // отправить запрос
-bool request(const su::Text& path, const su::Text& method, const su::Text& headers, const su::Text& payload);
+bool request(const Text& path, const Text& method, const Text& headers, const Text& payload);
 
 // отправить запрос
-bool request(const su::Text& path, const su::Text& method = "GET", const su::Text& headers = su::Text(), const uint8_t* payload = nullptr, size_t length = 0);
+bool request(const Text& path, const Text& method = "GET", const Text& headers = Text(), const uint8_t* payload = nullptr, size_t length = 0);
 
 // начать отправку. Дальше нужно вручную print
 bool beginSend();
@@ -129,7 +129,7 @@ void flush();
 ### Client::Response
 ```cpp
 // тип контента (из хэдера Content-Type)
-su::Text type();
+Text type();
 
 // тело ответа (длина из хэдера Content-Length)
 StreamReader& body();
@@ -165,20 +165,20 @@ Client* client();
 
 // отправить клиенту. Можно вызывать несколько раз подряд
 void print(Printable& p);
-void send(const su::Text& text);
-void send(const su::Text& text, uint16_t code, su::Text type = su::Text());
+void send(const Text& text);
+void send(const Text& text, uint16_t code, Text type = Text());
 
 // отправить клиенту код. Должно быть единственным ответом
 void send(uint16_t code);
 
 // отправить файл
-void sendFile(File& file, su::Text type = su::Text(), bool cache = false, bool gzip = false);
+void sendFile(File& file, Text type = Text(), bool cache = false, bool gzip = false);
 
 // отправить файл из буфера
-void sendFile(const uint8_t* buf, size_t len, su::Text type = su::Text(), bool cache = false, bool gzip = false);
+void sendFile(const uint8_t* buf, size_t len, Text type = Text(), bool cache = false, bool gzip = false);
 
 // отправить файл из PROGMEM
-void sendFile_P(const uint8_t* buf, size_t len, su::Text type = su::Text(), bool cache = false, bool gzip = false);
+void sendFile_P(const uint8_t* buf, size_t len, Text type = Text(), bool cache = false, bool gzip = false);
 
 // пометить запрос как выполненный
 void handle();
@@ -187,23 +187,23 @@ void handle();
 void useCors(bool use);
 
 // получить mime тип файла по его пути
-const __FlashStringHelper* getMime(const su::Text& path);
+const __FlashStringHelper* getMime(const Text& path);
 ```
 
 ### ServerBase::Request
 ```cpp
 // метод запроса
-const su::Text& method();
+const Text& method();
 
 // полный урл
-const su::Text& url();
+const Text& url();
 
 // путь (без параметров)
-su::Text path();
+Text path();
 
 // получить значение параметра по ключу
 // параметр без значения вернёт валидную пустую строку
-su::Text param(const su::Text& key);
+Text param(const Text& key);
 
 // получить тело запроса. Может выводиться в Print
 StreamReader& body();
@@ -215,7 +215,7 @@ StreamReader& body();
 Headers(uint16_t code);
 
 // добавить хэдер
-void add(const su::Text& name, const su::Text& value);
+void add(const Text& name, const Text& value);
 ```
 
 ### ghttp::HeadersCollector
@@ -225,7 +225,7 @@ void add(const su::Text& name, const su::Text& value);
 ```cpp
 class Collector : public ghttp::HeadersCollector {
    public:
-    void header(su::Text& name, su::Text& value) {
+    void header(Text& name, Text& value) {
         Serial.print(name);
         Serial.print(": ");
         Serial.println(value);
@@ -260,7 +260,7 @@ void loop() {
 
 ## Версии
 - v1.0
-- v1.0.8 - улучшения и добавления
+- 1.0.8 - улучшения и добавления
 
 <a id="install"></a>
 ## Установка

@@ -32,7 +32,7 @@ class Client : public Print {
         Response(const String& type, Stream* stream = nullptr, size_t len = 0) : _type(type), _reader(stream, len) {}
 
         // тип контента
-        su::Text type() const {
+        Text type() const {
             return _type;
         }
 
@@ -132,12 +132,12 @@ class Client : public Print {
     }
 
     // отправить запрос
-    bool request(const su::Text& path, const su::Text& method, const su::Text& headers, const su::Text& payload) {
+    bool request(const Text& path, const Text& method, const Text& headers, const Text& payload) {
         return request(path, method, headers, (uint8_t*)payload.str(), payload.length());
     }
 
     // отправить запрос
-    bool request(const su::Text& path, const su::Text& method = "GET", const su::Text& headers = su::Text(), const uint8_t* payload = nullptr, size_t length = 0) {
+    bool request(const Text& path, const Text& method = "GET", const Text& headers = Text(), const uint8_t* payload = nullptr, size_t length = 0) {
         if (!beginSend()) return 0;
 
         String req;

@@ -36,8 +36,8 @@ void setup() {
 
     client.setInsecure();
 
-    su::Text json = "{\"chat_id\":" CHAT_ID ",\"text\":\"hello!\"}";
-    su::Text headers = "Content-Type: application/json\r\n";
+    Text json = "{\"chat_id\":" CHAT_ID ",\"text\":\"hello!\"}";
+    Text headers = "Content-Type: application/json\r\n";
     http.request("/bot" BOT_TOKEN "/sendMessage", "GET", headers, json);
 
     http.onResponse([](ghttp::Client::Response& resp) {

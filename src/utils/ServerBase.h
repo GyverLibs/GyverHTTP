@@ -48,7 +48,7 @@ class ServerBase {
                     "Expires: 0\r\n");
             }
         }
-        void type(const su::Text& t) {
+        void type(const Text& t) {
             checkStart();
             s += F("Content-Type: ");
             if (t) t.addString(s);
@@ -83,7 +83,7 @@ class ServerBase {
         }
 
         // добавить хэдер
-        void add(const su::Text& name, const su::Text& value) {
+        void add(const Text& name, const Text& value) {
             checkStart();
             name.addString(s);
             s += F(": ");
@@ -104,39 +104,39 @@ class ServerBase {
 
     class Request {
        public:
-        Request(const su::Text& method, const su::Text& url, Stream* stream, size_t len) : _reader(stream, len), _method(method), _url(url) {
+        Request(const Text& method, const Text& url, Stream* stream, size_t len) : _reader(stream, len), _method(method), _url(url) {
             _q = _url.indexOf('?');
         }
 
         // метод запроса
-        const su::Text& method() const {
+        const Text& method() const {
             return _method;
         }
 
         // полный урл
-        const su::Text& url() const {
+        const Text& url() const {
             return _url;
         }
 
         // путь (без параметров)
-        su::Text path() const {
+        Text path() const {
             return (_q > 0) ? _url.substring(0, _q) : _url;
         }
 
         // получить значение параметра по ключу
-        su::Text param(const su::Text& key) const {
-            if (_q < 0) return su::Text();
+        Text param(const Text& key) const {
+            if (_q < 0) return Text();
 
-            su::Text params = _url.substring(_q + 1);
+            Text params = _url.substring(_q + 1);
             int p = 0;
 
             while (1) {
                 p = params.indexOf(key, p);
-                if (p < 0) return su::Text();
+                if (p < 0) return Text();
 
                 p += key.length();
                 if (p == params.length() || params[p] == '&') {
-                    return su::Text("", 0);
+                    return Text("", 0);
                 }
                 if (params[p] == '=') {
                     p++;
@@ -155,8 +155,8 @@ class ServerBase {
 
        private:
         StreamReader _reader;
-        const su::Text _method;
-        const su::Text _url;
+        const Text _method;
+        const Text _url;
         int16_t _q = -1;
     };
 
@@ -198,7 +198,7 @@ class ServerBase {
     }
 
     // отправить клиенту. Можно вызывать несколько раз подряд
-    void send(const su::Text& text, uint16_t code, su::Text type = su::Text()) {
+    void send(const Text& text, uint16_t code, Text type = Text()) {
         if (!_clientp) return;
 
         if (!_respStarted) {
@@ -208,7 +208,7 @@ class ServerBase {
         }
         _clientp->print(text);
     }
-    void send(const su::Text& text) {
+    void send(const Text& text) {
         if (!_clientp) return;
 
         if (!_respStarted) {
@@ -243,21 +243,21 @@ class ServerBase {
 
 #ifdef FS_H
     // отправить файл
-    void sendFile(File& file, su::Text type = su::Text(), bool cache = false, bool gzip = false) {
+    void sendFile(File& file, Text type = Text(), bool cache = false, bool gzip = false) {
         if (!_clientp) return;
         StreamWriter writer(&file, file.size());
         _sendFile(writer, type, cache, gzip);
     }
 #endif
     // отправить файл из буфера
-    void sendFile(const uint8_t* buf, size_t len, su::Text type = su::Text(), bool cache = false, bool gzip = false) {
+    void sendFile(const uint8_t* buf, size_t len, Text type = Text(), bool cache = false, bool gzip = false) {
         if (!_clientp) return;
         StreamWriter writer(buf, len);
         _sendFile(writer, type, cache, gzip);
     }
 
     // отправить файл из PROGMEM
-    void sendFile_P(const uint8_t* buf, size_t len, su::Text type = su::Text(), bool cache = false, bool gzip = false) {
+    void sendFile_P(const uint8_t* buf, size_t len, Text type = Text(), bool cache = false, bool gzip = false) {
         if (!_clientp) return;
         StreamWriter writer(buf, len, true);
         _sendFile(writer, type, cache, gzip);
@@ -274,7 +274,7 @@ class ServerBase {
     }
 
     // получить mime тип файла по его пути
-    const __FlashStringHelper* getMime(const su::Text& path) {
+    const __FlashStringHelper* getMime(const Text& path) {
         int16_t pos = path.lastIndexOf('.');
         if (pos > 0) {
             switch (path.substring(pos + 1).hash()) {
@@ -317,8 +317,8 @@ class ServerBase {
     // обработать запрос
     void handleRequest(::Client& client, HeadersCollector* collector = nullptr) {
         String lineStr = client.readStringUntil('\n');
-        su::Text lineTxt(lineStr);
-        su::Text lines[3];
+        Text lineTxt(lineStr);
+        Text lines[3];
         size_t n = lineTxt.split(lines, 3, ' ');
         if (n != 3) return;
 
@@ -374,7 +374,7 @@ class ServerBase {
         _contentBegin = lastHeader;
         _respStarted = true;
     }
-    void _sendFile(StreamWriter& writer, const su::Text& type, bool cache, bool gzip) {
+    void _sendFile(StreamWriter& writer, const Text& type, bool cache, bool gzip) {
         _flush();
         writer.setBlockSize(HS_BLOCK_SIZE);
 
