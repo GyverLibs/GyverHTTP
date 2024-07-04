@@ -1,5 +1,6 @@
 #pragma once
 #include <Arduino.h>
+#include <StringUtils.h>
 
 #include "utils/cfg.h"
 
@@ -18,6 +19,19 @@ class StreamReader : public Printable {
         _bsize = bsize;
     }
 
+    // прочитать в строку
+    String readString() {
+        String s;
+        if (length()) {
+            s.reserve(length());
+            while (available()) {
+                GHTTP_ESP_YIELD();
+                s += (char)read();
+            }
+        }
+        return s;
+    }
+
     // прочитать байт
     uint8_t read() {
         if (available()) {
@@ -25,6 +39,8 @@ class StreamReader : public Printable {
             if (res >= 0) {
                 _len--;
                 return res;
+            } else {
+                _len = 0;
             }
         }
         return 0;

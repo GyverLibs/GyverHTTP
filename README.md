@@ -44,6 +44,9 @@ size_t printTo(Print& p);
 ```cpp
 StreamReader(Stream* stream = nullptr, size_t len = 0);
 
+// прочитать в строку
+String readString();
+
 // установить таймаут
 void setTimeout(size_t tout);
 
@@ -151,7 +154,17 @@ void onRequest(RequestCallback callback);
 // начать ответ. В Headers можно указать кастомные хэдеры
 void beginResponse(Headers& resp);
 
+// начать ответ
+void beginResponse(uint16_t code = 200);
+
+// начать отправку
+void beginSend();
+
+// доступ к клиенту для отправки
+Client* client();
+
 // отправить клиенту. Можно вызывать несколько раз подряд
+void print(Printable& p);
 void send(const su::Text& text);
 void send(const su::Text& text, uint16_t code, su::Text type = su::Text());
 
@@ -247,6 +260,7 @@ void loop() {
 
 ## Версии
 - v1.0
+- 1.0.8 - улучшения и добавления
 
 <a id="install"></a>
 ## Установка

@@ -81,7 +81,7 @@ class ServerBase {
             s.reserve(200);
             begin(code);
         }
-        
+
         // добавить хэдер
         void add(const su::Text& name, const su::Text& value) {
             checkStart();
@@ -173,6 +173,25 @@ class ServerBase {
         _beginResponse(resp, false);
     }
 
+    // начать ответ
+    void beginResponse(uint16_t code = 200) {
+        Headers resp(code);
+        _beginResponse(resp, false);
+    }
+
+    // начать отправку
+    void beginSend() {
+        if (!_contentBegin) {
+            _contentBegin = true;
+            _clientp->println();
+        }
+    }
+
+    // доступ к клиенту для отправки
+    ::Client* client() {
+        return _clientp;
+    }
+
     // подключить обработчик запроса
     void onRequest(RequestCallback callback) {
         _req_cb = callback;
@@ -195,12 +214,18 @@ class ServerBase {
         if (!_respStarted) {
             send(text, 200);
         } else {
-            if (!_contentBegin) {
-                _contentBegin = true;
-                _clientp->println();
-            }
+            beginSend();
             _clientp->print(text);
         }
+    }
+    void print(Printable& p) {
+        if (!_clientp) return;
+
+        if (!_respStarted) {
+            Headers resp(200);
+            _beginResponse(resp, true);
+        }
+        _clientp->print(p);
     }
 
     // отправить клиенту код. Должно быть единственным ответом

@@ -9,6 +9,9 @@ class StreamWriter : public Printable {
     StreamWriter() {}
     StreamWriter(Stream* stream, size_t len) : _stream(stream), _len(len) {}
     StreamWriter(const uint8_t* buf, size_t len, bool pgm = 0) : _buf(buf), _len(len), _pgm(pgm) {}
+    StreamWriter(const char* buf, int16_t len = -1, bool pgm = 0) : _buf((const uint8_t*)buf), _len(len >= 0 ? len : (pgm ? strlen_P(buf) : strlen(buf))), _pgm(pgm) {}
+    StreamWriter(const __FlashStringHelper* str) : _buf((const uint8_t*)str), _len(strlen_P((PGM_P)str)), _pgm(true) {}
+    StreamWriter(String& s) : _buf((const uint8_t*)s.c_str()), _len(s.length()), _pgm(false) {}
 
     // размер данных
     size_t length() const {
@@ -31,7 +34,7 @@ class StreamWriter : public Printable {
             if (!_stream->available()) return 0;
             uint8_t* buf = new uint8_t[min(_bsize, _len)];
             if (!buf) return 0;
-           
+
             while (left) {
                 size_t len = min(min(left, (size_t)_stream->available()), _bsize);
                 size_t read = _stream->readBytes(buf, len);
@@ -41,7 +44,7 @@ class StreamWriter : public Printable {
                 left -= len;
             }
             delete[] buf;
-           
+
         } else if (_buf) {
             if (_pgm) {
                 const uint8_t* bytes = _buf;
@@ -57,7 +60,7 @@ class StreamWriter : public Printable {
                     left -= len;
                 }
                 delete[] buf;
-               
+
             } else {
                 printed = p.write(_buf, _len);
             }
