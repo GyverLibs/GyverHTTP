@@ -99,10 +99,9 @@ void onResponse(ResponseCallback cb);
 bool connect();
 
 // отправить запрос
-bool request(const Text& path, const Text& method, const Text& headers, const Text& payload);
-
-// отправить запрос
-bool request(const Text& path, const Text& method = "GET", const Text& headers = Text(), const uint8_t* payload = nullptr, size_t length = 0);
+bool request(Text path, Text method, Text headers, FormData& data);
+bool request(Text path, Text method, Text headers, Text payload);
+bool request(Text path, Text method = "GET", Text headers = Text(), const uint8_t* payload = nullptr, size_t length = 0);
 
 // начать отправку. Дальше нужно вручную print
 bool beginSend();
@@ -138,6 +137,18 @@ StreamReader& body();
 operator bool();
 ```
 
+### Client::FormData
+// билдер form data
+```cpp
+void add(Text name, Text filename, Text type, Text data);
+```
+
+### Client::Headers
+// билдер заголовков
+```cpp
+void add(Text name, Text value);
+```
+
 ### Server
 ```cpp
 Server(uint16_t port);
@@ -165,8 +176,8 @@ Client* client();
 
 // отправить клиенту. Можно вызывать несколько раз подряд
 void print(Printable& p);
-void send(const Text& text);
-void send(const Text& text, uint16_t code, Text type = Text());
+void send(Text text);
+void send(Text text, uint16_t code, Text type = Text());
 
 // отправить клиенту код. Должно быть единственным ответом
 void send(uint16_t code);
@@ -187,23 +198,23 @@ void handle();
 void useCors(bool use);
 
 // получить mime тип файла по его пути
-const __FlashStringHelper* getMime(const Text& path);
+const __FlashStringHelper* getMime(Text path);
 ```
 
 ### ServerBase::Request
 ```cpp
 // метод запроса
-const Text& method();
+Text method();
 
 // полный урл
-const Text& url();
+Text url();
 
 // путь (без параметров)
 Text path();
 
 // получить значение параметра по ключу
 // параметр без значения вернёт валидную пустую строку
-Text param(const Text& key);
+Text param(Text key);
 
 // получить тело запроса. Может выводиться в Print
 StreamReader& body();
@@ -215,7 +226,7 @@ StreamReader& body();
 Headers(uint16_t code);
 
 // добавить хэдер
-void add(const Text& name, const Text& value);
+void add(Text name, Text value);
 ```
 
 ### ghttp::HeadersCollector

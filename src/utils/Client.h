@@ -13,6 +13,7 @@
 #define HC_DEF_TIMEOUT 2000     // таймаут по умолчанию
 #define HC_HEADER_BUF_SIZE 150  // буфер одной строки хэдера
 #define HC_FLUSH_BLOCK 64       // блок очистки
+#define HC_BOUNDARY "----GyverHttpBoundary123454321"
 
 // #define HC_USE_LOG Serial
 
@@ -26,10 +27,68 @@ namespace ghttp {
 
 class Client : public Print {
    public:
+    // билдер form data
+    class FormData {
+        friend class Client;
+
+       public:
+        void add(const Text& name, const Text& filename, const Text& type, const Text& data) {
+            if (_first) s += F("--" HC_BOUNDARY);
+            _first = false;
+            clrf();
+            s += F("Content-Disposition: form-data; name=\"");
+            name.addString(s);
+            s += '"';
+            if (filename.length()) {
+                s += F("; filename=\"");
+                filename.addString(s);
+                s += '"';
+            }
+            clrf();
+            if (type.length()) {
+                s += F("Content-Type: ");
+                type.addString(s);
+                clrf();
+            }
+            clrf();
+            data.addString(s);
+            clrf();
+            s += F("--" HC_BOUNDARY);
+        }
+
+       private:
+        String s;
+        bool _first = true;
+        void clrf() {
+            s += "\r\n";
+        }
+    };
+
+    // билдер заголовков
+    class Headers {
+        friend class Client;
+
+       public:
+        void add(const Text& name, const Text& value) {
+            name.addString(headers);
+            headers += ": ";
+            value.addString(headers);
+            headers += "\r\n";
+        }
+
+        operator Text() {
+            return headers;
+        }
+
+       private:
+        String headers;
+    };
+
+    // парсер ответа
     class Response {
        public:
         Response() {}
-        Response(const String& type, Stream* stream = nullptr, size_t len = 0) : _type(type), _reader(stream, len) {}
+        Response(const String& type, Stream* stream = nullptr, size_t len = 0, bool chunked = false) : _type(type), _reader(stream, len, chunked) {}
 
         // тип контента
         Text type() const {
@@ -132,12 +191,18 @@ class Client : public Print {
     }
 
     // отправить запрос
+    bool request(const Text& path, const Text& method, const Text& headers, FormData& data) {
+        data.s += "--";
+        return request(path, method, headers, (uint8_t*)data.s.c_str(), data.s.length(), true);
+    }
+
+    // отправить запрос
     bool request(const Text& path, const Text& method, const Text& headers, const Text& payload) {
         return request(path, method, headers, (uint8_t*)payload.str(), payload.length());
     }
 
     // отправить запрос
-    bool request(const Text& path, const Text& method = "GET", const Text& headers = Text(), const uint8_t* payload = nullptr, size_t length = 0) {
+    bool request(const Text& path, const Text& method = "GET", const Text& headers = Text(), const uint8_t* payload = nullptr, size_t length = 0, bool formdata = 0) {
         if (!beginSend()) return 0;
 
         String req;
@@ -150,6 +215,9 @@ class Client : public Print {
         else req += _ip.toString();
         req += F("\r\n");
         headers.addString(req);
+        if (formdata) {
+            req += F("Content-Type: multipart/form-data; boundary=" HC_BOUNDARY "\r\n");
+        }
         if (payload && length) {
             req += F("Content-Length: ");
             req += length;
@@ -195,7 +263,7 @@ class Client : public Print {
         if (headers) {
             _close = headers.close;
             _waiting = 0;
-            return Response(headers.contentType, &client, headers.length);
+            return Response(headers.contentType, &client, headers.length, headers.chunked);
         } else {
             flush();
             return Response();
