@@ -104,7 +104,7 @@ class ServerBase {
 
     class Request {
        public:
-        Request(const Text& method, const Text& url, Stream* stream, size_t len) : _reader(stream, len), _method(method), _url(url) {
+        Request(const Text& method, const Text& url, Stream* stream, size_t len, bool chunked = false) : _reader(stream, len, chunked), _method(method), _url(url) {
             _q = _url.indexOf('?');
         }
 
@@ -350,7 +350,7 @@ class ServerBase {
             }
             _flush();
         } else {
-            _req_cb(Request(lines[0], lines[1], &client, headers.length));
+            _req_cb(Request(lines[0], lines[1], &client, headers.length, headers.chunked));
         }
 
         if (!_respStarted) send(500);
