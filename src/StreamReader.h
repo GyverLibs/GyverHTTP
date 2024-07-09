@@ -4,6 +4,8 @@
 
 #include "utils/cfg.h"
 
+#define GHTTP_LENSTR_LEN 10
+
 // ==================== READER ====================
 class StreamReader : public Printable {
     class WritableBuffer {
@@ -84,10 +86,10 @@ class StreamReader : public Printable {
         return 0;
     }
 
-    // вывести в write(uint8_t*, size_t)
+    // вывести в write(uint8_t*, size_t). Вернёт количество записанных или 0 при ошибке
     template <typename T>
-    bool writeTo(T& p) const {
-        return _writeTo(p) == _len;
+    size_t writeTo(T& p) const {
+        return _chunked ? _writeTo(p) : (_writeTo(p) == _len ? _len : 0);
     }
 
     size_t printTo(Print& p) const {
@@ -120,60 +122,77 @@ class StreamReader : public Printable {
     template <typename T>
     size_t _writeTo(T& p) const {
         if (!stream) return 0;
+        uint8_t* buf = new uint8_t[_chunked ? _bsize : min(_bsize, _len)];
+        if (!buf) return 0;
 
+        size_t n = 0;
         if (_chunked) {
-            size_t readAmount = 0;
-            char lenstr[10];
+            char lenstr[GHTTP_LENSTR_LEN];
             while (1) {
-                delay(1);
                 GHTTP_ESP_YIELD();
 
-                size_t len = stream->readBytesUntil('\n', lenstr, 10);
-                if (!len || lenstr[len - 1] != '\r') break;
+                bool last = 0;
+                size_t len = stream->readBytesUntil('\n', lenstr, GHTTP_LENSTR_LEN);
+                if (!len || lenstr[len - 1] != '\r') {
+                    n = 0;
+                    break;
+                }
 
                 len = su::strToIntHex(lenstr, len - 1);
-                if (!len) break;
+                if (len) {
+                    size_t w = _writeBuffered(len, buf, p);
+                    if (w != len) {
+                        n = 0;
+                        break;
+                    }
+                    n += w;
+                } else {
+                    last = 1;
+                }
 
-                StreamReader reader(stream, len);
-                size_t read = reader._writeTo(p);
-                if (read != len) break;
+                len = stream->readBytesUntil('\n', lenstr, GHTTP_LENSTR_LEN);
+                if (len != 1 || lenstr[0] != '\r') {
+                    n = 0;
+                    break;
+                }
 
-                readAmount += read;
-                len = stream->readBytesUntil('\n', lenstr, 10);
-                if (len != 1 || lenstr[0] != '\r') break;
+                if (last) break;
             }
-            return readAmount;
 
         } else {
-            if (!_len) return 0;
-
-            size_t left = _len;
-            uint8_t* buf = new uint8_t[min(_bsize, _len)];
-            if (!buf) return 0;
-
-            while (left) {
-                delay(1);
-                GHTTP_ESP_YIELD();
-                if (!stream->available()) {
-                    uint32_t ms = millis();
-                    while (!stream->available()) {
-                        delay(1);
-                        GHTTP_ESP_YIELD();
-                        if (millis() - ms >= _tout) goto terminate;
-                    }
-                }
-                size_t len = min(min(left, (size_t)stream->available()), _bsize);
-                size_t read = stream->readBytes(buf, len);
-                GHTTP_ESP_YIELD();
-
-                if (read != len) break;
-                if (len != p.write(buf, len)) break;
-                left -= len;
-            }
-
-        terminate:
-            delete[] buf;
-            return _len - left;
+            if (_len) n = _writeBuffered(_len, buf, p);
         }
+
+        delete[] buf;
+        return n;
+    }
+
+    template <typename T>
+    size_t _writeBuffered(size_t len, uint8_t* buffer, T& p) const {
+        size_t left = len;
+        while (left) {
+            GHTTP_ESP_YIELD();
+            if (!_waitStream()) break;
+
+            size_t block = min(min(left, (size_t)stream->available()), _bsize);
+            size_t read = stream->readBytes(buffer, block);
+            GHTTP_ESP_YIELD();
+
+            if (read != block) break;
+            if (block != p.write(buffer, block)) break;
+            left -= block;
+        }
+        return len - left;
+    }
+
+    bool _waitStream() const {
+        if (!stream->available()) {
+            int ms = _tout;
+            while (!stream->available()) {
+                delay(1);
+                if (!--ms) return 0;
+            }
+        }
+        return 1;
     }
 };
