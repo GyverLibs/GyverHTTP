@@ -4,44 +4,12 @@
 
 #include "utils/cfg.h"
 
-#define GHTTP_LENSTR_LEN 10
+#define READER_LENSTR_LEN 10
 
 // ==================== READER ====================
-class StreamReader : public Printable {
-    class WritableBuffer {
-       public:
-        WritableBuffer(uint8_t* buffer) : buffer(buffer) {}
-
-        size_t write(uint8_t* data, size_t len) {
-            memcpy(buffer, data, len);
-            buffer += len;
-            return len;
-        }
-
-       private:
-        uint8_t* buffer;
-    };
-
-    class WritableString {
-       public:
-        WritableString(String& s) : s(s) {}
-
-        size_t write(uint8_t* data, size_t len) {
-            s.concat((char*)data, len);
-            return len;
-        }
-
-       private:
-        String& s;
-    };
-
+class StreamReader : public Printable, public Stream {
    public:
     StreamReader(Stream* stream = nullptr, size_t len = 0, bool chunked = false) : stream(stream), _len(len), _chunked(chunked) {}
-
-    // установить таймаут
-    void setTimeout(size_t tout) {
-        _tout = tout;
-    }
 
     // установить размер блока
     void setBlockSize(size_t bsize) {
@@ -53,62 +21,98 @@ class StreamReader : public Printable {
         return _chunked;
     }
 
-    // прочитать в буфер, вернёт true при успехе
-    bool readBytes(uint8_t* buf) const {
-        WritableBuffer buffer(buf);
-        return writeTo(buffer);
+    // корреткность ридера
+    operator bool() {
+        return available();
     }
 
-    // прочитать в строку
-    bool readString(String& s) {
-        WritableString wr(s);
-        return writeTo(wr);
+    // оставшийся размер входящих данных. 1 если chunked
+    size_t length() {
+        return available();
     }
 
-    // прочитать в строку
-    String readString() {
-        String s;
-        readString(s);
-        return s;
+    // override
+    size_t write(uint8_t) { return 0; }
+
+    int available() {
+        return stream ? (_chunked ? 1 : _len) : 0;
     }
 
-    // прочитать байт
-    uint8_t read() {
-        if (available() && !_chunked) {
-            int res = stream->read();
-            if (res >= 0) {
-                _len--;
-                return res;
-            } else {
-                _len = 0;
+    int read() {
+        if (!available()) return -1;
+        char c;
+        readBytes(&c, 1);
+        return c;
+    }
+
+    int peek() {
+        return '0';
+    }
+
+    size_t readBytes(char* buffer, size_t length) {
+        if (!stream) return 0;
+
+        if (_chunked) {
+            size_t wasread = 0;
+            while (length) {
+                GHTTP_ESP_YIELD();
+                if (_chunklen) {
+                    size_t curlen = min(_chunklen, length);
+                    size_t read = stream->readBytes(buffer, curlen);
+                    wasread += read;
+                    length -= curlen;
+                    _chunklen -= curlen;
+
+                    if (read != curlen) {  // read error
+                        stream = nullptr;
+                        break;
+                    }
+
+                    if (!_chunklen) {
+                        if (!_endChunk()) {  // chunked end error
+                            stream = nullptr;
+                            break;
+                        }
+                    }
+
+                } else {
+                    int chlen = _readChunkLen();
+                    if (chlen <= 0) {
+                        if (chlen < 0) {
+                            // read len error
+                        }
+                        if (!chlen) {
+                            if (!_endChunk()) {
+                                // chunked end error
+                            }
+                        }
+                        stream = nullptr;
+                        break;
+                    }
+                    _chunklen = chlen;
+                }
             }
+            return wasread;
+
+        } else {
+            if (length > _len) length = _len;
+            _len -= length;
+            size_t read = stream->readBytes(buffer, length);
+            if (!_len) stream = nullptr;
+            return read;
         }
         return 0;
     }
 
-    // вывести в write(uint8_t*, size_t). Вернёт количество записанных или 0 при ошибке
+    // вывести всё в write(uint8_t*, size_t). Вернёт количество записанных или 0 при ошибке
     template <typename T>
     size_t writeTo(T& p) const {
         return _chunked ? _writeTo(p) : (_writeTo(p) == _len ? _len : 0);
     }
 
+    // вывести всё в Print
     size_t printTo(Print& p) const {
         return _writeTo(p);
-    }
-
-    // оставшийся размер входящих данных
-    size_t length() const {
-        return stream ? _len : 0;
-    }
-
-    // оставшийся размер входящих данных
-    size_t available() const {
-        return length();
-    }
-
-    // корреткность ридера
-    operator bool() const {
-        return stream && (_len || _chunked);
     }
 
     Stream* stream = nullptr;
@@ -116,8 +120,22 @@ class StreamReader : public Printable {
    private:
     size_t _len;
     size_t _bsize = 128;
-    size_t _tout = 2000;
     bool _chunked = false;
+    size_t _chunklen = 0;
+
+    // -1 error
+    int _readChunkLen() {
+        char lenstr[READER_LENSTR_LEN];
+        size_t len = stream->readBytesUntil('\n', lenstr, READER_LENSTR_LEN);
+        if (len < 2 || lenstr[len - 1] != '\r') return -1;
+        return su::strToIntHex(lenstr, len - 1);
+    }
+    bool _endChunk() {
+        char r, n;
+        stream->readBytes(&r, 1);
+        stream->readBytes(&n, 1);
+        return (r == '\r' && n == '\n');
+    }
 
     template <typename T>
     size_t _writeTo(T& p) const {
@@ -127,12 +145,12 @@ class StreamReader : public Printable {
 
         size_t n = 0;
         if (_chunked) {
-            char lenstr[GHTTP_LENSTR_LEN];
+            char lenstr[READER_LENSTR_LEN];
             while (1) {
                 GHTTP_ESP_YIELD();
 
                 bool last = 0;
-                size_t len = stream->readBytesUntil('\n', lenstr, GHTTP_LENSTR_LEN);
+                size_t len = stream->readBytesUntil('\n', lenstr, READER_LENSTR_LEN);
                 if (!len || lenstr[len - 1] != '\r') {
                     n = 0;
                     break;
@@ -150,7 +168,7 @@ class StreamReader : public Printable {
                     last = 1;
                 }
 
-                len = stream->readBytesUntil('\n', lenstr, GHTTP_LENSTR_LEN);
+                len = stream->readBytesUntil('\n', lenstr, READER_LENSTR_LEN);
                 if (len != 1 || lenstr[0] != '\r') {
                     n = 0;
                     break;
@@ -187,7 +205,7 @@ class StreamReader : public Printable {
 
     bool _waitStream() const {
         if (!stream->available()) {
-            int ms = _tout;
+            int ms = getTimeout();
             while (!stream->available()) {
                 delay(1);
                 if (!--ms) return 0;
