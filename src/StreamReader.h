@@ -60,6 +60,7 @@ class StreamReader : public Printable, public Stream {
                     size_t curlen = min(_chunklen, length);
                     size_t read = stream->readBytes(buffer, curlen);
                     wasread += read;
+                    buffer += curlen;
                     length -= curlen;
                     _chunklen -= curlen;
 
