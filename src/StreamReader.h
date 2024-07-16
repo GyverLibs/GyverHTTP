@@ -17,6 +17,11 @@ class StreamReader : public Printable, public Stream {
         _bsize = bsize;
     }
 
+    void setTimeout(size_t tout) {
+        _tout = tout;
+        if (stream) stream->setTimeout(tout);
+    }
+
     // http chunked response
     bool isChunked() {
         return _chunked;

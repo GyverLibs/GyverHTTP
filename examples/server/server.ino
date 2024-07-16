@@ -109,11 +109,15 @@ void setup() {
             // File f = LittleFS.open("lorem.txt", "r");
             // server.sendFile(f);
         } else if (req.url() == "/answer") {
-            server.send("hello ");
-            server.send("world");
-            server.send(" WORLD");
+            // chunked
+            server.send("hello");
+            server.send(", ");
+            server.send("WORLD");
+
+            // single
+            // server.sendSingle("HELLO, WORLD");
         } else if (req.url() == "/answer_headers") {
-            // добавить свои хэдеры
+            // добавить свои хэдеры к send
             ghttp::ServerBase::Headers headers(200);
             headers.add("kek-header", "kek value");
             headers.add("another-header", "jello!");
@@ -122,7 +126,7 @@ void setup() {
             server.send("this is ");
             server.send("answer");
         } else if (req.url() == "/file_headers") {
-            // добавить свои хэдеры
+            // добавить свои хэдеры к файлу
             ghttp::ServerBase::Headers headers(200);
             headers.add("file-header", "abcdef");
             server.beginResponse(headers);

@@ -168,19 +168,19 @@ void beginResponse(Headers& resp);
 // начать ответ
 void beginResponse(uint16_t code = 200);
 
-// начать отправку
-void beginSend();
-
 // доступ к клиенту для отправки
 Client* client();
+
+// отправить клиенту код. Должно быть единственным ответом
+void send(uint16_t code);
+
+// отправить клиенту и завершить сеанс. Должно быть единственным ответом, использовать без beginResponse
+void sendSingle(const Text& text, uint16_t code = 200, Text type = Text());
 
 // отправить клиенту. Можно вызывать несколько раз подряд
 void print(Printable& p);
 void send(Text text);
 void send(Text text, uint16_t code, Text type = Text());
-
-// отправить клиенту код. Должно быть единственным ответом
-void send(uint16_t code);
 
 // отправить файл
 void sendFile(File& file, Text type = Text(), bool cache = false, bool gzip = false);

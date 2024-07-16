@@ -168,23 +168,15 @@ class ServerBase {
 
     // ==================== SERVER ====================
    public:
-    // начать ответ. В Headers можно указать кастомные хэдеры
+    // начать ответ. В Headers можно указать кастомные хэдеры. Отправка через send/print
     void beginResponse(Headers& resp) {
         _beginResponse(resp, false);
     }
 
-    // начать ответ
+    // начать ответ. Отправка через send/print
     void beginResponse(uint16_t code = 200) {
         Headers resp(code);
         _beginResponse(resp, false);
-    }
-
-    // начать отправку
-    void beginSend() {
-        if (!_contentBegin) {
-            _contentBegin = true;
-            _clientp->println();
-        }
     }
 
     // доступ к клиенту для отправки
@@ -195,6 +187,18 @@ class ServerBase {
     // подключить обработчик запроса
     void onRequest(RequestCallback callback) {
         _req_cb = callback;
+    }
+
+    // отправить клиенту и завершить сеанс. Должно быть единственным ответом, использовать без beginResponse
+    void sendSingle(const Text& text, uint16_t code = 200, Text type = Text()) {
+        if (!_clientp || _respStarted) return;
+
+        Headers resp(code);
+        resp.type(type);
+        resp.length(text.length());
+        _beginResponse(resp, true);
+        _clientp->print(text);
+        _clientp = nullptr;
     }
 
     // отправить клиенту. Можно вызывать несколько раз подряд
@@ -208,16 +212,23 @@ class ServerBase {
         }
         _clientp->print(text);
     }
+
+    // отправить клиенту. Можно вызывать несколько раз подряд
     void send(const Text& text) {
         if (!_clientp) return;
 
         if (!_respStarted) {
             send(text, 200);
         } else {
-            beginSend();
+            if (!_contentBegin) {
+                _contentBegin = true;
+                _clientp->println();
+            }
             _clientp->print(text);
         }
     }
+
+    // отправить клиенту. Можно вызывать несколько раз подряд
     void print(Printable& p) {
         if (!_clientp) return;
 
@@ -249,6 +260,7 @@ class ServerBase {
         _sendFile(writer, type, cache, gzip);
     }
 #endif
+
     // отправить файл из буфера
     void sendFile(const uint8_t* buf, size_t len, Text type = Text(), bool cache = false, bool gzip = false) {
         if (!_clientp) return;
@@ -278,37 +290,23 @@ class ServerBase {
         int16_t pos = path.lastIndexOf('.');
         if (pos > 0) {
             switch (path.substring(pos + 1).hash()) {
-                case su::SH("avi"):
-                    return F("video/x-msvideo");
-                case su::SH("bin"):
-                    return F("application/octet-stream");
-                case su::SH("bmp"):
-                    return F("image/bmp");
-                case su::SH("css"):
-                    return F("text/css");
-                case su::SH("csv"):
-                    return F("text/csv");
-                case su::SH("gz"):
-                    return F("application/gzip");
-                case su::SH("gif"):
-                    return F("image/gif");
-                case su::SH("html"):
-                    return F("text/html");
+                case su::SH("avi"): return F("video/x-msvideo");
+                case su::SH("bin"): return F("application/octet-stream");
+                case su::SH("bmp"): return F("image/bmp");
+                case su::SH("css"): return F("text/css");
+                case su::SH("csv"): return F("text/csv");
+                case su::SH("gz"): return F("application/gzip");
+                case su::SH("gif"): return F("image/gif");
+                case su::SH("html"): return F("text/html");
+                case su::SH("js"): return F("text/javascript");
+                case su::SH("json"): return F("application/json");
+                case su::SH("png"): return F("image/png");
+                case su::SH("svg"): return F("image/svg+xml");
+                case su::SH("wav"): return F("audio/wav");
+                case su::SH("xml"): return F("application/xml");
                 case su::SH("jpeg"):
                 case su::SH("jpg"):
                     return F("image/jpeg");
-                case su::SH("js"):
-                    return F("text/javascript");
-                case su::SH("json"):
-                    return F("application/json");
-                case su::SH("png"):
-                    return F("image/png");
-                case su::SH("svg"):
-                    return F("image/svg+xml");
-                case su::SH("wav"):
-                    return F("audio/wav");
-                case su::SH("xml"):
-                    return F("application/xml");
             }
         }
         return F("text/plain");
