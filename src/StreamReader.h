@@ -5,11 +5,12 @@
 #include "utils/cfg.h"
 
 #define READER_LENSTR_LEN 10
+#define READER_DEF_TOUT 500
 
 // ==================== READER ====================
 class StreamReader : public Printable, public Stream {
    public:
-    StreamReader(Stream* stream = nullptr, size_t len = 0, bool chunked = false) : stream(stream), _len(len), _chunked(chunked) {}
+    StreamReader(Stream* stream = nullptr, size_t len = 0, bool chunked = false) : stream(stream), _len(len), _chunked(chunked), _tout(stream ? stream->getTimeout() : READER_DEF_TOUT) {}
 
     // установить размер блока
     void setBlockSize(size_t bsize) {
@@ -123,6 +124,7 @@ class StreamReader : public Printable, public Stream {
     size_t _bsize = 128;
     bool _chunked = false;
     size_t _chunklen = 0;
+    size_t _tout;
 
     // -1 error
     int _readChunkLen() {
@@ -206,7 +208,7 @@ class StreamReader : public Printable, public Stream {
 
     bool _waitStream() const {
         if (!stream->available()) {
-            int ms = getTimeout();
+            int ms = _tout;
             while (!stream->available()) {
                 delay(1);
                 if (!--ms) return 0;
