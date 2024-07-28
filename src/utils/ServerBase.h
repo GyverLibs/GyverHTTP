@@ -16,7 +16,7 @@
 #include <FS.h>
 #endif
 
-#define HS_HEADER_BUF_SIZE 150  // буфер одной строки хэдера
+#define HS_HEADER_BUF_SIZE 250  // буфер одной строки хэдера
 #define HS_BLOCK_SIZE 256       // размер блока выгрузки из файла и PROGMEM
 #define HS_FLUSH_BLOCK 64       // блок очистки
 #define HS_CACHE_PRD "604800"   // период кеширования

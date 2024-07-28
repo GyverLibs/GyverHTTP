@@ -16,7 +16,7 @@ class HeadersCollector {
 
 class HeadersParser {
    public:
-    HeadersParser(::Client& client, size_t bufsize = 150, HeadersCollector* collector = nullptr) {
+    HeadersParser(::Client& client, size_t bufsize = 250, HeadersCollector* collector = nullptr) {
         contentType.reserve(50);
         bool connF = 0, typeF = 0, lengthF = 0, encodingF = 0;
         uint8_t* buf = new uint8_t[bufsize];
