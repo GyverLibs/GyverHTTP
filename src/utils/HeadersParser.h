@@ -4,6 +4,7 @@
 #include <StringUtils.h>
 
 // #define GHTTP_HEADERS_LOG Serial
+#define GHTTP_HEADERS_TIMEOUT 500
 
 #include "utils/cfg.h"
 
@@ -16,7 +17,7 @@ class HeadersCollector {
 
 class HeadersParser {
    public:
-    HeadersParser(::Client& client, size_t bufsize = 250, HeadersCollector* collector = nullptr) {
+    HeadersParser(::Client& client, size_t bufsize = 150, HeadersCollector* collector = nullptr) {
         contentType.reserve(50);
         bool connF = 0, typeF = 0, lengthF = 0, encodingF = 0;
         uint8_t* buf = new uint8_t[bufsize];
@@ -25,6 +26,15 @@ class HeadersParser {
         while (client.connected()) {
             GHTTP_ESP_YIELD();
             size_t n = client.readBytesUntil('\n', buf, bufsize);
+
+            if (n == bufsize && buf[n - 1] != '\n') {
+                uint32_t tmr = millis();
+                while (client.read() != '\n') {
+                    GHTTP_ESP_YIELD();
+                    if (millis() - tmr >= GHTTP_HEADERS_TIMEOUT) break;
+                }
+                continue;
+            }
 
             if (!n || buf[n - 1] != '\r') break;  // пустая или не оканчивается на \r
             if (n == 1) {                         // == \r

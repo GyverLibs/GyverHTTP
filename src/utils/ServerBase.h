@@ -16,7 +16,7 @@
 #include <FS.h>
 #endif
 
-#define HS_HEADER_BUF_SIZE 250  // буфер одной строки хэдера
+#define HS_HEADER_BUF_SIZE 150  // буфер одной строки хэдера
 #define HS_BLOCK_SIZE 256       // размер блока выгрузки из файла и PROGMEM
 #define HS_FLUSH_BLOCK 64       // блок очистки
 #define HS_CACHE_PRD "604800"   // период кеширования
@@ -261,6 +261,13 @@ class ServerBase {
     }
 #endif
 
+    // отправить файл-строку как текст
+    void sendFile(const Text& text, Text type = Text(), bool cache = false) {
+        if (!_clientp) return;
+        StreamWriter writer(text.str(), text.length(), text.pgm());
+        _sendFile(writer, type, cache, false);
+    }
+
     // отправить файл из буфера
     void sendFile(const uint8_t* buf, size_t len, Text type = Text(), bool cache = false, bool gzip = false) {
         if (!_clientp) return;
@@ -273,6 +280,13 @@ class ServerBase {
         if (!_clientp) return;
         StreamWriter writer(buf, len, true);
         _sendFile(writer, type, cache, gzip);
+    }
+
+    // отправить файл-строку из PROGMEM
+    void sendFile_P(const char* pstr, Text type = Text(), bool cache = false) {
+        if (!_clientp) return;
+        StreamWriter writer(pstr, strlen_P(pstr), true);
+        _sendFile(writer, type, cache, false);
     }
 
     // пометить запрос как выполненный
