@@ -21,6 +21,8 @@ class Server : public ServerBase {
         if (client) {
             client.setTimeout(GS_CLIENT_TOUT);
             handleRequest(client, collector);
+            client.flush();
+            yield();
         }
     }
 

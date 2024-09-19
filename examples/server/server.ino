@@ -96,7 +96,7 @@ void setup() {
         Serial.println(req.param("lol"));
 
         // BODY
-        Serial.println(req.body());
+        req.body().writeTo(Serial);
         // req.body().writeTo(Serial);
         // req.body().writeTo(file);
         // req.body().stream.readBytes(buf, req.length());

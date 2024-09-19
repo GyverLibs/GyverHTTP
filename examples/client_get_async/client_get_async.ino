@@ -54,7 +54,7 @@ void loop() {
         if (resp) {
             Serial.println(resp.type());
             Serial.println(resp.body().length());
-            Serial.println(resp.body());
+            resp.body().writeTo(Serial);
         } else {
             Serial.println("response error");
         }

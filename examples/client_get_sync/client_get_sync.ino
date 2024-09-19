@@ -40,7 +40,7 @@ void setup() {
             Serial.println(resp.code());
             Serial.println(resp.type());
             Serial.println(resp.body().length());
-            Serial.println(resp.body());
+            resp.body().writeTo(Serial);
 
             // парсинг json body при помощи GSON
             // работает также с chunked encoding

@@ -8,7 +8,7 @@
 #define READER_DEF_TOUT 500
 
 // ==================== READER ====================
-class StreamReader : public Printable, public Stream {
+class StreamReader : public Stream {
     class WritableString : public String {
        public:
         size_t write(uint8_t* data, size_t len) {
@@ -153,13 +153,53 @@ class StreamReader : public Printable, public Stream {
 
     // вывести всё в write(uint8_t*, size_t). Вернёт количество записанных или 0 при ошибке
     template <typename T>
-    size_t writeTo(T& p) const {
-        return _chunked ? _writeTo(p) : (_writeTo(p) == _len ? _len : 0);
-    }
+    size_t writeTo(T& p) {
+        if (!stream) return 0;
+        uint8_t* buf = new uint8_t[_chunked ? _bsize : min(_bsize, _len)];
+        if (!buf) return 0;
 
-    // вывести всё в Print
-    size_t printTo(Print& p) const {
-        return _writeTo(p);
+        size_t writed = 0;
+        if (_chunked) {
+            char lenstr[READER_LENSTR_LEN];
+            while (1) {
+                GHTTP_ESP_YIELD();
+
+                bool last = 0;
+                size_t len = stream->readBytesUntil('\n', lenstr, READER_LENSTR_LEN);
+                if (!len || lenstr[len - 1] != '\r') {
+                    writed = 0;
+                    break;
+                }
+
+                len = su::strToIntHex(lenstr, len - 1);
+                if (len) {
+                    size_t w = _writeBuffered(len, buf, p);
+                    if (w != len) {
+                        writed = 0;
+                        break;
+                    }
+                    writed += w;
+                } else {
+                    last = 1;
+                }
+
+                len = stream->readBytesUntil('\n', lenstr, READER_LENSTR_LEN);
+                if (len != 1 || lenstr[0] != '\r') {
+                    writed = 0;
+                    break;
+                }
+
+                if (last) break;
+            }
+
+        } else {
+            writed = _writeBuffered(_len, buf, p);
+        }
+
+        delete[] buf;
+        _len = 0;
+        stream = nullptr;
+        return writed;
     }
 
     Stream* stream = nullptr;
@@ -186,55 +226,7 @@ class StreamReader : public Printable, public Stream {
     }
 
     template <typename T>
-    size_t _writeTo(T& p) const {
-        if (!stream) return 0;
-        uint8_t* buf = new uint8_t[_chunked ? _bsize : min(_bsize, _len)];
-        if (!buf) return 0;
-
-        size_t n = 0;
-        if (_chunked) {
-            char lenstr[READER_LENSTR_LEN];
-            while (1) {
-                GHTTP_ESP_YIELD();
-
-                bool last = 0;
-                size_t len = stream->readBytesUntil('\n', lenstr, READER_LENSTR_LEN);
-                if (!len || lenstr[len - 1] != '\r') {
-                    n = 0;
-                    break;
-                }
-
-                len = su::strToIntHex(lenstr, len - 1);
-                if (len) {
-                    size_t w = _writeBuffered(len, buf, p);
-                    if (w != len) {
-                        n = 0;
-                        break;
-                    }
-                    n += w;
-                } else {
-                    last = 1;
-                }
-
-                len = stream->readBytesUntil('\n', lenstr, READER_LENSTR_LEN);
-                if (len != 1 || lenstr[0] != '\r') {
-                    n = 0;
-                    break;
-                }
-
-                if (last) break;
-            }
-
-        } else {
-            if (_len) n = _writeBuffered(_len, buf, p);
-        }
-
-        delete[] buf;
-        return n;
-    }
-
-    template <typename T>
-    size_t _writeBuffered(size_t len, uint8_t* buffer, T& p) const {
+    size_t _writeBuffered(size_t len, uint8_t* buffer, T& p) {
         size_t left = len;
         while (left) {
             GHTTP_ESP_YIELD();
@@ -251,7 +243,7 @@ class StreamReader : public Printable, public Stream {
         return len - left;
     }
 
-    bool _waitStream() const {
+    bool _waitStream() {
         if (!stream->available()) {
             int ms = _tout;
             while (!stream->available()) {

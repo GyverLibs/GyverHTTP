@@ -43,7 +43,7 @@ void setup() {
     http.onResponse([](ghttp::Client::Response& resp) {
         Serial.println(resp.type());
         Serial.println(resp.body().length());
-        Serial.println(resp.body());
+        resp.body().writeTo(Serial);
     });
 }
 void loop() {

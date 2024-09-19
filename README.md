@@ -60,8 +60,6 @@ bool readBytes(uint8_t* buf);
 template <typename T>
 bool writeTo(T& p);
 
-size_t printTo(Print& p);
-
 // общий размер входящих данных
 size_t length();
 
