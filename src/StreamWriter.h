@@ -1,6 +1,10 @@
 #pragma once
 #include <Arduino.h>
 
+#ifdef ESP8266
+#include <StreamDev.h>
+#endif
+
 #include "utils/cfg.h"
 
 // ==================== SENDER ====================
@@ -46,13 +50,18 @@ class StreamWriter : public Printable {
             delete[] buf;
 
         } else if (_buf) {
+#if defined(ESP8266)
+            StreamConstPtr strp(_buf, _len);
+            strp.sendAll(p, 5000);
+#elif defined(ESP32)
+            printed = p.write(_buf, _len);
+#else
             if (_pgm) {
                 const uint8_t* bytes = _buf;
                 uint8_t* buf = new uint8_t[min(_bsize, _len)];
                 if (!buf) return 0;
 
                 while (left) {
-                    GHTTP_ESP_YIELD();
                     size_t len = min(_bsize, left);
                     memcpy_P(buf, bytes, len);
                     printed += p.write(buf, len);
@@ -64,6 +73,7 @@ class StreamWriter : public Printable {
             } else {
                 printed = p.write(_buf, _len);
             }
+#endif
         }
         return printed;
     }
