@@ -190,19 +190,24 @@ class ServerBase {
     }
 
     // отправить клиенту и завершить сеанс. Должно быть единственным ответом, использовать без beginResponse
-    void sendSingle(const Text& text, uint16_t code = 200, Text type = Text()) {
+    void sendSingle(const uint8_t* data, size_t len, uint16_t code = 200, Text type = Text()) {
         if (!_clientp || _respStarted) return;
 
         Headers resp(code);
         resp.type(type);
-        resp.length(text.length());
+        resp.length(len);
         _beginResponse(resp, true);
-        _clientp->print(text);
+        _send(data, len);
         _clientp = nullptr;
     }
 
+    // отправить клиенту и завершить сеанс. Должно быть единственным ответом, использовать без beginResponse
+    void sendSingle(const Text& text, uint16_t code = 200, Text type = Text()) {
+        sendSingle((const uint8_t*)text.str(), text.length(), code, type);
+    }
+
     // отправить клиенту. Можно вызывать несколько раз подряд
-    void send(const Text& text, uint16_t code, Text type = Text()) {
+    void send(const uint8_t* data, size_t len, uint16_t code, Text type = Text()) {
         if (!_clientp) return;
 
         if (!_respStarted) {
@@ -210,22 +215,32 @@ class ServerBase {
             resp.type(type);
             _beginResponse(resp, true);
         }
-        _clientp->print(text);
+        _send(data, len);
     }
 
     // отправить клиенту. Можно вызывать несколько раз подряд
-    void send(const Text& text) {
+    void send(const Text& text, uint16_t code, Text type = Text()) {
+        send((const uint8_t*)text.str(), text.length(), code, type);
+    }
+
+    // отправить клиенту. Можно вызывать несколько раз подряд
+    void send(const uint8_t* data, size_t len) {
         if (!_clientp) return;
 
         if (!_respStarted) {
-            send(text, 200);
+            send(data, len, 200);
         } else {
             if (!_contentBegin) {
                 _contentBegin = true;
                 _clientp->println();
             }
-            _clientp->print(text);
+            _send(data, len);
         }
+    }
+
+    // отправить клиенту. Можно вызывать несколько раз подряд
+    void send(const Text& text) {
+        send((const uint8_t*)text.str(), text.length());
     }
 
     // отправить клиенту. Можно вызывать несколько раз подряд
@@ -413,6 +428,10 @@ class ServerBase {
             GHTTP_ESP_YIELD();
             _clientp->readBytes(bytes, min(_clientp->available(), HS_FLUSH_BLOCK));
         }
+    }
+    void _send(const uint8_t* data, size_t len) {
+        StreamWriter writer(data, len);
+        _clientp->print(writer);
     }
 };
 

@@ -3,6 +3,8 @@
 
 #include "utils/cfg.h"
 
+#define WRITER_PRINT_BLOCK_SIZE 512
+
 // ==================== SENDER ====================
 class StreamWriter : public Printable {
    public:
@@ -26,49 +28,9 @@ class StreamWriter : public Printable {
     // напечатать в принт
     size_t printTo(Print& p) const {
         if (!_len) return 0;
-
-        size_t left = _len;
-        size_t printed = 0;
-
-        if (_stream) {
-            if (!_stream->available()) return 0;
-            uint8_t* buf = new uint8_t[min(_bsize, _len)];
-            if (!buf) return 0;
-
-            while (left) {
-                size_t len = min(min(left, (size_t)_stream->available()), _bsize);
-                size_t read = _stream->readBytes(buf, len);
-                GHTTP_ESP_YIELD();
-                printed += p.write(buf, read);
-                if (len != read) break;
-                left -= len;
-            }
-            delete[] buf;
-
-        } else if (_buf) {
-#if defined(ESP32)
-            printed = p.write(_buf, _len);
-#else
-            if (_pgm) {
-                const uint8_t* bytes = _buf;
-                uint8_t* buf = new uint8_t[min(_bsize, _len)];
-                if (!buf) return 0;
-
-                while (left) {
-                    size_t len = min(_bsize, left);
-                    memcpy_P(buf, bytes, len);
-                    printed += p.write(buf, len);
-                    bytes += len;
-                    left -= len;
-                }
-                delete[] buf;
-
-            } else {
-                printed = p.write(_buf, _len);
-            }
-#endif
-        }
-        return printed;
+        if (_stream) return _printStream(p);
+        else if (_buf) return _pgm ? _printPGM(p) : _print(p);
+        return 0;
     }
 
    protected:
@@ -79,4 +41,67 @@ class StreamWriter : public Printable {
 
    private:
     size_t _bsize = 128;
+
+    size_t _printStream(Print& p) const {
+        if (!_stream->available()) return 0;
+        uint8_t* buf = new uint8_t[min(_bsize, _len)];
+        if (!buf) return 0;
+
+        size_t left = _len;
+        size_t printed = 0;
+
+        while (left) {
+            GHTTP_ESP_YIELD();
+            size_t len = min(min(left, (size_t)_stream->available()), _bsize);
+            size_t read = _stream->readBytes(buf, len);
+            printed += p.write(buf, read);
+            if (len != read) break;
+            left -= len;
+        }
+        delete[] buf;
+        return printed;
+    }
+
+    size_t _printPGM(Print& p) const {
+#if defined(ESP32)
+        return _print(p);
+#else
+        const uint8_t* bytes = _buf;
+        uint8_t* buf = new uint8_t[min(_bsize, _len)];
+        if (!buf) return 0;
+
+        size_t left = _len;
+        size_t printed = 0;
+
+        while (left) {
+            GHTTP_ESP_YIELD();
+            size_t len = min(_bsize, left);
+            memcpy_P(buf, bytes, len);
+            printed += p.write(buf, len);
+            bytes += len;
+            left -= len;
+        }
+        delete[] buf;
+        return printed;
+#endif
+    }
+    
+    size_t _print(Print& p) const {
+#if defined(ESP8266)
+        return p.write(_buf, _len);
+#elif defined(ESP32)
+        size_t left = _len;
+        size_t printed = 0;
+        const uint8_t* bytes = _buf;
+        while (left) {
+            size_t curlen = min(left, (size_t)WRITER_PRINT_BLOCK_SIZE);
+            printed += p.write(bytes, curlen);
+            left -= curlen;
+            bytes += curlen;
+        }
+        return printed;
+#else
+        return p.write(_buf, _len);
+#endif
+    }
 };
