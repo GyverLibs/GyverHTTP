@@ -423,7 +423,7 @@ class ServerBase {
     }
     void _flush() {
         uint8_t bytes[HS_FLUSH_BLOCK];
-        while (_clientp && _clientp->available()) {
+        while (_clientp && _clientp->connected() && _clientp->available()) {
             delay(1);
             GHTTP_ESP_YIELD();
             _clientp->readBytes(bytes, min(_clientp->available(), HS_FLUSH_BLOCK));
