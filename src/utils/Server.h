@@ -19,7 +19,7 @@ class Server : public ServerBase {
     void tick(HeadersCollector* collector = nullptr) {
         client_t client = server.accept();
         if (client) {
-            client.setTimeout(GS_CLIENT_TOUT);
+            client.Stream::setTimeout(GS_CLIENT_TOUT);
             handleRequest(client, collector);
         }
     }
