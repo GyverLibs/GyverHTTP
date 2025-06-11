@@ -11,7 +11,6 @@
 #include "cfg.h"
 
 #define HC_DEF_TIMEOUT 2000     // таймаут по умолчанию
-#define HC_HEADER_BUF_SIZE 150  // буфер одной строки хэдера
 #define HC_FLUSH_BLOCK 64       // блок очистки
 #define HC_BOUNDARY "----GyverHttpBoundary123454321"
 
@@ -268,7 +267,7 @@ class Client : public Print {
         Text lines[3];
         Text(lineStr).split(lines, 3, ' ');
 
-        HeadersParser headers(client, HC_HEADER_BUF_SIZE, collector);
+        HeadersParser headers(client, collector);
 
         if (headers) {
             _close = headers.close;
