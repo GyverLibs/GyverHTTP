@@ -34,7 +34,7 @@ class ServerBase {
             _started = true;
             s += F("HTTP/1.1 ");
             s += code;
-            if (code == 200) s += (code == 200) ? F(" OK\r\n") : F(" ERROR\r\n");
+            s += (code == 200) ? F(" OK\r\n") : F(" ERROR\r\n");
         }
         void cache(bool enabled) {
             checkStart();
