@@ -45,10 +45,29 @@ class HeadersParser {
                 if (collector) collector->header(name, value);
 
                 switch (name.hash()) {
-                    case SH("Content-Type"): value.addString(contentType); break;
-                    case SH("Content-Length"): length = value.toInt32(); break;
-                    case SH("Transfer-Encoding"): chunked = (value == F("chunked")); break;
-                    case SH("Connection"): close = (value == F("close")); break;
+                    case SH("Content-Type"):
+                    case SH("content-type"):
+                    case SH("CONTENT-TYPE"):
+                        value.addString(contentType);
+                        break;
+
+                    case SH("Content-Length"):
+                    case SH("content-length"):
+                    case SH("CONTENT-LENGTH"):
+                        length = value.toInt32();
+                        break;
+
+                    case SH("Transfer-Encoding"):
+                    case SH("transfer-encoding"):
+                    case SH("TRANSFER-ENCODING"):
+                        chunked = (value == F("chunked") || value == F("CHUNKED"));
+                        break;
+
+                    case SH("Connection"):
+                    case SH("connection"):
+                    case SH("CONNECTION"):
+                        close = (value == F("close") || value == F("CLOSE"));
+                        break;
                 }
             }
         }
