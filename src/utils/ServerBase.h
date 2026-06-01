@@ -1,7 +1,7 @@
 #pragma once
 #include <Arduino.h>
 #include <Client.h>
-#include <StringUtils.h>
+#include <StringUtilsGyver.h>
 
 #include "HeadersParser.h"
 #include "StreamReader.h"
@@ -359,7 +359,7 @@ class ServerBase {
             bool eol = false;
             size_t boundlen = 0;
             while (client.connected()) {
-                GHTTP_ESP_YIELD();
+                GHTTP_YIELD();
                 String s = client.readStringUntil('\n');
                 if (!s.length() || s[s.length() - 1] != '\r') break;
 
@@ -423,8 +423,7 @@ class ServerBase {
     void _flush() {
         uint8_t bytes[HS_FLUSH_BLOCK];
         while (_clientp && _clientp->connected() && _clientp->available()) {
-            delay(1);
-            GHTTP_ESP_YIELD();
+            GHTTP_YIELD();
             _clientp->readBytes(bytes, min(_clientp->available(), HS_FLUSH_BLOCK));
         }
     }

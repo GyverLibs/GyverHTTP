@@ -1,8 +1,8 @@
 #pragma once
 #include <Arduino.h>
-#include <StringUtils.h>
+#include <StringUtilsGyver.h>
 
-#include "utils/cfg.h"
+#include "./utils/cfg.h"
 
 #define READER_LENSTR_LEN 10
 #define READER_DEF_TOUT 500
@@ -101,7 +101,7 @@ class StreamReader : public Stream {
         if (_chunked) {
             size_t wasread = 0;
             while (length) {
-                GHTTP_ESP_YIELD();
+                GHTTP_YIELD();
                 if (_chunklen) {
                     size_t curlen = min(_chunklen, length);
                     size_t read = stream->readBytes(buffer, curlen);
@@ -162,7 +162,7 @@ class StreamReader : public Stream {
         if (_chunked) {
             char lenstr[READER_LENSTR_LEN];
             while (1) {
-                GHTTP_ESP_YIELD();
+                GHTTP_YIELD();
 
                 bool last = 0;
                 size_t len = stream->readBytesUntil('\n', lenstr, READER_LENSTR_LEN);
@@ -229,12 +229,14 @@ class StreamReader : public Stream {
     size_t _writeBuffered(size_t len, uint8_t* buffer, T& p) {
         size_t left = len;
         while (left) {
-            GHTTP_ESP_YIELD();
+            GHTTP_YIELD();
             if (!_waitStream()) break;
 
             size_t block = min(min(left, (size_t)stream->available()), _bsize);
+            if (!block) break;
+
             size_t read = stream->readBytes(buffer, block);
-            GHTTP_ESP_YIELD();
+            GHTTP_YIELD();
 
             if (read != block) break;
             if (block != p.write(buffer, block)) break;

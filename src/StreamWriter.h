@@ -1,7 +1,7 @@
 #pragma once
 #include <Arduino.h>
 
-#include "utils/cfg.h"
+#include "./utils/cfg.h"
 
 #define WRITER_PRINT_BLOCK_SIZE 512
 
@@ -51,7 +51,7 @@ class StreamWriter : public Printable {
         size_t printed = 0;
 
         while (left) {
-            GHTTP_ESP_YIELD();
+            GHTTP_YIELD();
             size_t len = min(min(left, (size_t)_stream->available()), _bsize);
             size_t read = _stream->readBytes(buf, len);
             printed += p.write(buf, read);
@@ -74,7 +74,7 @@ class StreamWriter : public Printable {
         size_t printed = 0;
 
         while (left) {
-            GHTTP_ESP_YIELD();
+            GHTTP_YIELD();
             size_t len = min(_bsize, left);
             memcpy_P(buf, bytes, len);
             printed += p.write(buf, len);

@@ -1,6 +1,6 @@
 #pragma once
 #include <Arduino.h>
-#include <StringUtils.h>
+#include <StringUtilsGyver.h>
 
 // #define GHTTP_HEADERS_LOG Serial
 
@@ -21,7 +21,7 @@ class HeadersParser {
         String buf;
 
         while (client.connected()) {
-            GHTTP_ESP_YIELD();
+            GHTTP_YIELD();
             buf = client.readStringUntil('\n');
             size_t n = buf.length();
 

@@ -10,8 +10,8 @@
 #include "StreamReader.h"
 #include "cfg.h"
 
-#define HC_DEF_TIMEOUT 2000     // таймаут по умолчанию
-#define HC_FLUSH_BLOCK 64       // блок очистки
+#define HC_DEF_TIMEOUT 2000  // таймаут по умолчанию
+#define HC_FLUSH_BLOCK 64    // блок очистки
 #define HC_BOUNDARY "----GyverHttpBoundary123454321"
 
 // #define HC_USE_LOG Serial
@@ -32,8 +32,7 @@ class Client : public Print {
 
        public:
         void add(const Text& name, const Text& filename, const Text& type, const Text& data) {
-            if (_first) s += F("--" HC_BOUNDARY);
-            _first = false;
+            if (!s.length()) s += F("--" HC_BOUNDARY);
             clrf();
             s += F("Content-Disposition: form-data; name=\"");
             name.addString(s);
@@ -44,20 +43,33 @@ class Client : public Print {
                 s += '"';
             }
             clrf();
+
             if (type.length()) {
                 s += F("Content-Type: ");
                 type.addString(s);
                 clrf();
             }
             clrf();
+
             data.addString(s);
             clrf();
             s += F("--" HC_BOUNDARY);
         }
 
+        void end() {
+            s += F("--\r\n");
+        }
+
+        const char* str() const {
+            return s.c_str();
+        }
+
+        uint16_t length() const {
+            return s.length();
+        }
+
        private:
         String s;
-        bool _first = true;
         void clrf() {
             s += "\r\n";
         }
@@ -196,9 +208,8 @@ class Client : public Print {
     }
 
     // отправить запрос
-    bool request(const Text& path, const Text& method, const Text& headers, FormData& data) {
-        data.s += "--";
-        return request(path, method, headers, (uint8_t*)data.s.c_str(), data.s.length(), true);
+    bool request(const Text& path, const Text& method, const Text& headers, const FormData& data) {
+        return request(path, method, headers, (uint8_t*)data.str(), data.length(), true);
     }
 
     // отправить запрос
@@ -300,8 +311,7 @@ class Client : public Print {
             _wait();
             uint8_t bytes[HC_FLUSH_BLOCK];
             while (client.available()) {
-                delay(1);
-                GHTTP_ESP_YIELD();
+                GHTTP_YIELD();
                 client.readBytes(bytes, min(client.available(), HC_FLUSH_BLOCK));
             }
             if (_close) {
@@ -335,7 +345,6 @@ class Client : public Print {
 #ifdef ESP8266
             optimistic_yield(5000);
 #endif
-            GHTTP_ESP_YIELD();
 
             if (millis() - _lastSend >= _timeout) {
                 HC_LOG("client timeout");
