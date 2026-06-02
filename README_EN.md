@@ -1,223 +1,315 @@
-This is an automatic translation, may be incorrect in some places. See sources and examples!
+This is an automatic translation and may be incorrect in some places. See the source README and examples for authoritative information.
 
-# Gyverhttp
-Very simple and light http server and semiasinchronous http client
+[![latest](https://img.shields.io/github/v/release/GyverLibs/GyverHTTP.svg?color=brightgreen)](https://github.com/GyverLibs/GyverHTTP/releases/latest/download/GyverHTTP.zip)
+[![PIO](https://badges.registry.platformio.org/packages/gyverlibs/library/GyverHTTP.svg)](https://registry.platformio.org/libraries/gyverlibs/GyverHTTP)
+[![Foo](https://img.shields.io/badge/Website-AlexGyver.ru-blue.svg?style=flat-square)](https://alexgyver.ru/)
+[![Foo](https://img.shields.io/badge/%E2%82%BD%24%E2%82%AC%20%D0%9F%D0%BE%D0%B4%D0%B4%D0%B5%D1%80%D0%B6%D0%B0%D1%82%D1%8C-%D0%B0%D0%B2%D1%82%D0%BE%D1%80%D0%B0-orange.svg?style=flat-square)](https://alexgyver.ru/support_alex/)
+[![Foo](https://img.shields.io/badge/README-ENGLISH-blueviolet.svg?style=flat-square)](https://github-com.translate.goog/GyverLibs/GyverHTTP?_x_tr_sl=ru&_x_tr_tl=en)  
+
+[![Foo](https://img.shields.io/badge/ПОДПИСАТЬСЯ-НА%20ОБНОВЛЕНИЯ-brightgreen.svg?style=social&logo=telegram&color=blue)](https://t.me/GyverLibs)
+
+# GyverHTTP
+Very simple and lightweight HTTP server and semi-asynchronous HTTP client
 - Fast sending and receiving files
-- Convenient minimalistic API
+- Convenient minimalist API
 
-## compatibility
-Compatible with all arduino platforms (used arduino functions)
+### Compatibility
+Compatible with all Arduino platforms (Arduino features are used)
 
-## Content
-- [use] (#usage)
-- [versions] (#varsions)
-- [installation] (# Install)
-- [bugs and feedback] (#fedback)
+## Contents
+- [Use of use](#usage)
+- [Versions](#versions)
+- [Installation](#install)
+- [Bugs and feedback](#feedback)
 
-<a id="usage"> </a>
+<a id="usage"></a>
 
-## Usage
-### Streamsender
-A quick data sender to Print, supports work with files and Progmem.Reads to the buffer and sends with blocks, which is many times faster than ordinary sending
-`` `CPP
-Streamsender (File & File);
-Streamsender (Consta Uint8_t* Buf, Size_t Len, Bool PGM = 0);
+## Use of use
+### StreamWriter
+Fast data sender in Print, supports work with files and PROGMEM. Reads to the buffer and sends in blocks, which is many times faster than normal sending.
+```cpp
+StreamWriter(Stream* stream, size_t size);
+StreamWriter(const uint8_t* buf, size_t len, bool pgm = 0);
 
-// Data size
-Size_t Length ();
+// size
+size_t length();
 
-// set the size of the sending unit
-VOID Setblocksize (Size_T BSIZE);
+// set-up
+void setBlockSize(size_t bsize);
 
-// Print in print
-Size_t Printto (Print & P);
-`` `
+// print
+size_t printTo(Print& p);
+```
 
 ### StreamReader
-Quick reader of data from Stream of a certain length.Buffering and writes in blocks in the consumer, which is many times faster than usual reading
-`` `CPP
-StreamReader (Stream* Stream = Nullptr, Size_t Len = 0);
+A quick reader of data from a stream of known length. Buffers and writes in blocks to the consumer, which is many times faster than normal reading.
+```cpp
+StreamReader(Stream* stream = nullptr, size_t len = 0);
 
-// Install a timaut
-VOID settimeout (size_t tout);
+// line up
+String readString();
 
-// Set the block size
-VOID Setblocksize (Size_T BSIZE);
+// time-out
+void setTimeout(size_t tout);
 
-// read to the buffer, will return True with success
-Bool Readbytes (uint8_t* buf);
+// block size
+void setBlockSize(size_t bsize);
 
-// Bring out to Write (uint8_t*, size_t)
-TEMPLATE <TYPENAME T>
-Bool Writeto (T&P);
+// Read in the buffer, will return true on success
+bool readBytes(uint8_t* buf);
 
-Size_t Printto (Print & P);
+// write(uint8 t*, size t)
+template <typename T>
+bool writeTo(T& p);
 
-// total amount of incoming data
-Size_t Length ();
+// totality
+size_t length();
 
-// Correctic Rider
-Operator Bool ();
+// readership
+operator bool();
 
-Stream* Stream;
-`` `
+Stream* stream;
+```
 
-## client
-`` `CPP
-Size_t Write (Uint8_t Data);
-SIZE_T WRITE (COST UINT8_T* BUFFER, SIZE_T SIZE);
+### Client
+```cpp
+size_t write(uint8_t data);
+size_t write(const uint8_t* buffer, size_t size);
 
-// ============================
-
-// install a new host and port
-VOID Sethost (Const Char* Host, Uint16_T Port);
+// ==========================
 
 // install a new host and port
-VOID Sethost (Constress & IP, Uint16_T Port);
+void setHost(const char* host, uint16_t port);
 
-// Install a new client for communication
-VOID setclient (: Client & Client);
+// install a new host and port
+void setHost(const IPAddress& ip, uint16_t port);
 
-// Install the server response time, silent.2000 ms
-VOID settimeout (uint16_t tout);
+// Establish a new client for communication
+void setClient(::Client& client);
 
-// answers processor, requires a tick () call to loop ()
-VOID Onresponse (Responsecallback CB);
+// set the server response timeout, shut up. 2000 ms.
+void setTimeout(uint16_t tout);
 
-// ============================
+// The answer processor requires a tick() call to loop()
+void onResponse(ResponseCallback cb);
 
-// Connect
-Bool Connect ();
+// ==========================
 
-// Send a request
-Bool Request (Constation Su :: Text & Path, Cost Su :: Text & Method, const SU :: Text & Headers, Constation Su :: Text & Payload);
+// plug in
+bool connect();
 
-// Send a request
-Bool Request (Const SU :: Text & Path, Cost Su :: Text & Method = "Get", const SU :: Text & Headers = Su :: Text (), Cont Uint8_t* Payload, Size_t Length = 0);
+// request
+bool request(Text path, Text method, Text headers, FormData& data);
+bool request(Text path, Text method, Text headers, Text payload);
+bool request(Text path, Text method = "GET", Text headers = Text(), const uint8_t* payload = nullptr, size_t length = 0);
 
-// Start sending.Then you need to manually Print
-Bool BeginSend ();
+// start shipping. Next, you need to print manually.
+bool beginSend();
 
-// Client is waiting for an answer
-Bool ISWaiting ();
+// client
+bool isWaiting();
 
-// there is a response from the server (asynkhronno)
-Bool Available ();
+// There is a response from the server (asynchronous)
+bool available();
 
-// wait and read the response of the server (according to AVAILABLE if LONG Poll)
-Response getresponspon (Headerscollector* Collector = Nullptr);
+// wait and read the server response (on available if long poll)
+Response getResponse(HeadersCollector* collector = nullptr);
 
-// ticker, call in LOOP to work with collbe
-VOID Tick ();
+// ticker, call in the loop to work with callback
+void tick();
 
-// Stop the client
-VOID Stop ();
+// stop
+void stop();
 
-// Skip the answer, remove the waiting flag, stop if the Connection Close
-VOID Flush ();
-`` `
+// skip the answer, remove the waiting flag if connection close
+void flush();
+```
 
-### Client :: Response
-`` `CPP
-// Content type
-SU :: Text Type ();
+### Client::Response
+```cpp
+// Content type (from Content Type Header)
+Text type();
 
-// The body of the answer
-StreamReader & Body ();
+// code
+uint16_t code();
 
-// The answer exists
-Operator Bool ();
-`` `
+// Response Body (length from Content-Length Header)
+StreamReader& body();
+
+// answer
+operator bool();
+```
+
+### Client::FormData
+// Buildinger form data
+```cpp
+void add(Text name, Text filename, Text type, Text data);
+```
+
+### Client::Headers
+// Header builder
+```cpp
+void add(Text name, Text value);
+```
 
 ### Server
-`` `CPP
-ServeR (uint16_t port);
+```cpp
+Server(uint16_t port);
 
-// Launch
-VOID Begin ();
+// launch
+void begin();
 
-// Call in Loop
-VOID Tick (Headerscollector* Collector = Nullptr);
+// loop
+void tick(HeadersCollector* collector = nullptr);
 
-// Connect the request handler
-VOID Onrequest (RequestCallback Callback);
+// plug in
+void onRequest(RequestCallback callback);
 
-// Send the client.Can be called several times in a row
-VOID SEND (COST SU :: Text & Text, Uint16_t Code = 200, Su :: TEXT TYPE = SU :: Text ());
+// start answering. In Headers you can specify custom headers
+void beginResponse(Headers& resp);
 
-// Send the client the code.Should be the only answer
-VOID SEND (UINT16_T CODE);
+// begin
+void beginResponse(uint16_t code = 200);
 
-// Send the file
-VOID SENDFILE (File & File, Su :: Text Type = Su :: Text (), Bool Cache = False, Bool Gzip = False);
+// client access
+Client* client();
 
-// Send a file from the buffer
-VOID SENDFILE (COST UINT8_T* BUF, SIZE_T LEN, SU :: Text Type = Su :: Text (), Bool Cache = FALSE, BOL GZIP = FALSE);
+// Send the code to the client. Must be the only answer.
+void send(uint16_t code);
 
-// Send a file from Progmem
-VOID SENDFILE_P (COST UINT8_T* BUF, SIZE_T LEN, SU :: Text Type = SU :: Text (), Bool Cache = False, Bool Gzip = FALSE);
+// Send to the client and end the session. Should be the only answer, use without startResponse
+void sendSingle(const Text& text, uint16_t code = 200, Text type = Text());
 
-// mark the request as executed
-Void Handle ();
+// Send it to the client. You can call several times in a row
+void print(Printable& p);
+void send(Text text);
+void send(Text text, uint16_t code, Text type = Text());
 
-// Use Cors Harders (silent inclusive)
-VOID usecors (Bool Use);
+// file
+void sendFile(File& file, Text type = Text(), bool cache = false, bool gzip = false);
 
-// Get MIME File type along its path
-const __flashstringhelper* getmime (const SU :: text & Path);
-`` `
+// Send the file line as text
+void sendFile(const Text& text, Text type = Text(), bool cache = false);
 
-### SERVERBASE :: Request
-`` `CPP
-// Request method
-COST SU :: Text & Method ();
+// buffer
+void sendFile(const uint8_t* buf, size_t len, Text type = Text(), bool cache = false, bool gzip = false);
 
-// Full Url
-COST SU :: Text & url ();
+// send a file from PROGMEM
+void sendFile_P(const uint8_t* buf, size_t len, Text type = Text(), bool cache = false, bool gzip = false);
 
-// Path (without parameters)
-SU :: Text Path ();
+// send the file line from PROGMEM
+void sendFile_P(const char* pstr, Text type = Text(), bool cache = false);
 
-// get the value of the parameter by the key
-SU :: Text Param (Const SU :: Text & Key);
+// mark the request as completed
+void handle();
 
-// Get the body of the request.Can be displayed in Print
-StreamReader & Body ();
-`` `
+// use CORS headers (silent included)
+void useCors(bool use);
 
-<a id="versions"> </a>
+// Get a mime file type along the way
+const __FlashStringHelper* getMime(Text path);
+```
 
-## versions
-- V1.0
+### ServerBase::Request
+```cpp
+// method
+Text method();
 
-<a id="install"> </a>
+// urlful
+Text url();
+
+// path (without parameters)
+Text path();
+
+// get the key value
+// parameter without value will return a valid empty string
+Text param(Text key);
+
+// Get the request body. Could be in Print.
+StreamReader& body();
+```
+
+### ServerBase::Headers
+```cpp
+// start with the answer code
+Headers(uint16_t code);
+
+// header
+void add(Text name, Text value);
+```
+
+### ghttp::HeadersCollector
+The interface for manual handling of headers. Used as follows:
+
+We create our class based on it. For example, let him bring the series.
+```cpp
+class Collector : public ghttp::HeadersCollector {
+   public:
+    void header(Text& name, Text& value) {
+        Serial.print(name);
+        Serial.print(": ");
+        Serial.println(value);
+    }
+};
+```
+
+Header interception in the case of HTTP client
+```cpp
+if (http.available()) {
+    Collector collector;
+    ghttp::Client::Response resp = http.getResponse(&collector);
+    // At this point, we have broken heads.
+    if (resp) ...
+}
+```
+
+Header interception in the case of HTTP server
+```cpp
+Collector collector;
+
+void onrequest(...) {
+}
+
+void loop() {
+    // Headers will be processed before calling callback
+    server.tick(&collector);
+}
+```
+
+<a id="versions"></a>
+
+## Versions
+- v1.0
+- 1.0.8 - Improvements and additions
+
+<a id="install"></a>
 ## Installation
-- The library can be found by the name ** gyverhttp ** and installed through the library manager in:
-- Arduino ide
-- Arduino ide v2
-- Platformio
-- [download the library] (https://github.com/gyverlibs/gyverhttp/archive/refs/heads/main.zip) .Zip archive for manual installation:
-- unpack and put in * C: \ Program Files (X86) \ Arduino \ Libraries * (Windows X64)
-- unpack and put in * C: \ Program Files \ Arduino \ Libraries * (Windows X32)
-- unpack and put in *documents/arduino/libraries/ *
-- (Arduino id) Automatic installation from. Zip: * sketch/connect the library/add .Zip library ... * and specify downloaded archive
-- Read more detailed instructions for installing libraries [here] (https://alexgyver.ru/arduino-first/#%D0%A3%D1%81%D1%82%D0%B0%BD%D0%BE%BE%BE%BED0%B2%D0%BA%D0%B0_%D0%B1%D0%B8%D0%B1%D0%BB%D0%B8%D0%BE%D1%82%D0%B5%D0%BA)
+- The library can be found under the name **GyverHTTP** and installed through the library manager in:
+    - Arduino IDE
+    - Arduino IDE v2
+    - PlatformIO
+- [Download the library](https://github.com/GyverLibs/GyverHTTP/archive/refs/heads/main.zip).zip archive for manual installation:
+    - Unpack and put in *C:\Program Files (x86)\Arduino\libraries* (Windows x64)
+    - Unpack and put in *C:\Program Files\Arduino\libraries* (Windows x32)
+    - Unpack and put in *Documents/Arduino/libraries/ *
+    - (Arduino IDE) Automatic installation from .zip: *Sketch/Connect library/Add .ZIP library...* and specify downloaded archive
+- Read more detailed instructions for installing libraries[here](https://alexgyver.ru/arduino-first/#%D0%A3%D1%81%D1%82%D0%B0%D0%BD%D0%BE%D0%B2%D0%BA%D0%B0_%D0%B1%D0%B8%D0%B1%D0%BB%D0%B8%D0%BE%D1%82%D0%B5%D0%BA)
 ### Update
-- I recommend always updating the library: errors and bugs are corrected in the new versions, as well as optimization and new features are added
-- through the IDE library manager: find the library how to install and click "update"
-- Manually: ** remove the folder with the old version **, and then put a new one in its place.“Replacement” cannot be done: sometimes in new versions, files that remain when replacing are deleted and can lead to errors!
+- I recommend always updating the library: new versions fix errors and bugs, as well as optimize and add new features.
+- Through the library manager IDE: find the library as when installing and click "Update"
+- Manually: **Delete the folder with the old version** and then put the new one in its place. “Replacement” can not be done: sometimes new versions delete files that will remain when replaced and can lead to errors!
 
-<a id="feedback"> </a>
+<a id="feedback"></a>
 
-## bugs and feedback
-Create ** Issue ** when you find the bugs, and better immediately write to the mail [alex@alexgyver.ru] (mailto: alex@alexgyver.ru)
-The library is open for refinement and your ** pull Request ** 'ow!
+## Bugs and feedback
+If you find bugs, create **Issue**, or better write to the mail immediately.[alex@alexgyver.ru](mailto:alex@alexgyver.ru)  
+The library is open for revision and your **Pull Requests*!
 
-When reporting about bugs or incorrect work of the library, it is necessary to indicate:
-- The version of the library
-- What is MK used
+When reporting bugs or incorrect work of the library, it is necessary to specify:
+- Library version
+- What is used by the IC
 - SDK version (for ESP)
-- version of Arduino ide
-- whether the built -in examples work correctly, in which the functions and designs are used, leading to a bug in your code
-- what code has been loaded, what work was expected from it and how it works in reality
-- Ideally, attach the minimum code in which the bug is observed.Not a canvas of a thousand lines, but a minimum code
+- Arduino IDE version
+- Are embedded examples that use features and designs that cause bugs in your code working correctly?
+- What code was downloaded, what work was expected from it and how it works in reality
+- Ideally, attach the minimum code in which the bug is observed. Not a canvas of a thousand lines, but a minimum code.
