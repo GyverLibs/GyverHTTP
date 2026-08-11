@@ -34,7 +34,8 @@ class ServerBase {
             _started = true;
             s += F("HTTP/1.1 ");
             s += code;
-            s += (code == 200) ? F(" OK\r\n") : getReasonPhrase(code);    
+            s += (code == 200) ? F(" OK") : getReasonPhrase(code);
+            clrf();   
         }
         void cache(bool enabled) {
             checkStart();
@@ -101,28 +102,28 @@ class ServerBase {
         }
         const __FlashStringHelper* getReasonPhrase(uint16_t code) {
             switch (code) {
-                case 200: return F(" OK\r\n");
-                case 201: return F(" Created\r\n");
-                case 202: return F(" Accepted\r\n");
-                case 204: return F(" No Content\r\n");
+                case 200: return F(" OK");
+                case 201: return F(" Created");
+                case 202: return F(" Accepted");
+                case 204: return F(" No Content");
 
-                case 301: return F(" Moved Permanently\r\n");
-                case 302: return F(" Found\r\n");
-                case 304: return F(" Not Modified\r\n");
+                case 301: return F(" Moved Permanently");
+                case 302: return F(" Found");
+                case 304: return F(" Not Modified");
 
-                case 400: return F(" Bad Request\r\n");
-                case 401: return F(" Unauthorized\r\n");
-                case 403: return F(" Forbidden\r\n");
-                case 404: return F(" Not Found\r\n");
-                case 405: return F(" Method Not Allowed\r\n");
-                case 409: return F(" Conflict\r\n");
+                case 400: return F(" Bad Request");
+                case 401: return F(" Unauthorized");
+                case 403: return F(" Forbidden");
+                case 404: return F(" Not Found");
+                case 405: return F(" Method Not Allowed");
+                case 409: return F(" Conflict");
 
-                case 500: return F(" Internal Server Error\r\n");
-                case 501: return F(" Not Implemented\r\n");
-                case 503: return F(" Service Unavailable\r\n");
+                case 500: return F(" Internal Server Error");
+                case 501: return F(" Not Implemented");
+                case 503: return F(" Service Unavailable");
 
                 default:
-                    return (code < 400) ? F(" OK\r\n") : F(" ERROR\r\n");
+                    return (code < 400) ? F(" OK") : F(" ERROR");
             }
         }
     };
