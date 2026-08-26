@@ -34,7 +34,8 @@ class ServerBase {
             _started = true;
             s += F("HTTP/1.1 ");
             s += code;
-            s += (code == 200) ? F(" OK\r\n") : F(" ERROR\r\n");
+            s += (code == 200) ? F(" OK") : getReasonPhrase(code);
+            clrf();   
         }
         void cache(bool enabled) {
             checkStart();
@@ -98,6 +99,32 @@ class ServerBase {
         }
         void checkStart() {
             if (!_started) begin(200);
+        }
+        const __FlashStringHelper* getReasonPhrase(uint16_t code) {
+            switch (code) {
+                case 200: return F(" OK");
+                case 201: return F(" Created");
+                case 202: return F(" Accepted");
+                case 204: return F(" No Content");
+
+                case 301: return F(" Moved Permanently");
+                case 302: return F(" Found");
+                case 304: return F(" Not Modified");
+
+                case 400: return F(" Bad Request");
+                case 401: return F(" Unauthorized");
+                case 403: return F(" Forbidden");
+                case 404: return F(" Not Found");
+                case 405: return F(" Method Not Allowed");
+                case 409: return F(" Conflict");
+
+                case 500: return F(" Internal Server Error");
+                case 501: return F(" Not Implemented");
+                case 503: return F(" Service Unavailable");
+
+                default:
+                    return (code < 400) ? F(" OK") : F(" ERROR");
+            }
         }
     };
 
