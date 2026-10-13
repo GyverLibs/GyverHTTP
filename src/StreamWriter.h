@@ -43,8 +43,10 @@ class StreamWriter : public Printable {
     size_t _bsize = 128;
 
     size_t _printStream(Print& p) const {
+        if (!_stream || !_bsize || !_len) return 0;
         if (!_stream->available()) return 0;
-        uint8_t* buf = new uint8_t[min(_bsize, _len)];
+
+        uint8_t* buf = (uint8_t*)malloc(min(_bsize, _len));
         if (!buf) return 0;
 
         size_t left = _len;
@@ -52,13 +54,25 @@ class StreamWriter : public Printable {
 
         while (left) {
             GHTTP_YIELD();
-            size_t len = min(min(left, (size_t)_stream->available()), _bsize);
-            size_t read = _stream->readBytes(buf, len);
-            printed += p.write(buf, read);
-            if (len != read) break;
-            left -= len;
+
+            size_t len = min(_bsize, left);
+            size_t n = _stream->readBytes(buf, len);
+            if (!n) break;
+
+            size_t written = 0;
+            while (written < n) {
+                size_t w = p.write(buf + written, n - written);
+                if (!w) break;
+                written += w;
+            }
+
+            printed += written;
+            left -= n;
+
+            if (written != n || n != len) break;
         }
-        delete[] buf;
+
+        free(buf);
         return printed;
     }
 
@@ -66,22 +80,36 @@ class StreamWriter : public Printable {
 #if defined(ESP32)
         return _print(p);
 #else
-        const uint8_t* bytes = _buf;
-        uint8_t* buf = new uint8_t[min(_bsize, _len)];
+        if (!_bsize || !_len) return 0;
+
+        uint8_t* buf = (uint8_t*)malloc(min(_bsize, _len));
         if (!buf) return 0;
 
+        const uint8_t* bytes = _buf;
         size_t left = _len;
         size_t printed = 0;
 
         while (left) {
             GHTTP_YIELD();
+
             size_t len = min(_bsize, left);
             memcpy_P(buf, bytes, len);
-            printed += p.write(buf, len);
+
+            size_t written = 0;
+            while (written < len) {
+                size_t w = p.write(buf + written, len - written);
+                if (!w) break;
+                written += w;
+            }
+
+            printed += written;
+            if (written != len) break;
+
             bytes += len;
             left -= len;
         }
-        delete[] buf;
+
+        free(buf);
         return printed;
 #endif
     }
