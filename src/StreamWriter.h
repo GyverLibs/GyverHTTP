@@ -85,23 +85,16 @@ class StreamWriter : public Printable {
         return printed;
 #endif
     }
-    
+
     size_t _print(Print& p) const {
-#if defined(ESP8266)
-        return p.write(_buf, _len);
-#elif defined(ESP32)
-        size_t left = _len;
-        size_t printed = 0;
-        const uint8_t* bytes = _buf;
-        while (left) {
-            size_t curlen = min(left, (size_t)WRITER_PRINT_BLOCK_SIZE);
-            printed += p.write(bytes, curlen);
-            left -= curlen;
-            bytes += curlen;
+        size_t written = 0;
+
+        while (written < _len) {
+            size_t n = p.write(_buf + written, _len - written);
+            if (!n) break;
+            written += n;
         }
-        return printed;
-#else
-        return p.write(_buf, _len);
-#endif
+
+        return written;
     }
 };
